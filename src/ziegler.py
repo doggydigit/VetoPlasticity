@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     # Simulation choices
     if len(sys.argv) == 1:
-        protocol = 'test'  # can be either of test, sTET, wTET, sLFS, wLFS or STDP
+        protocol = 'sTET'  # can be either of test, sTET, wTET, sLFS, wLFS or STDP
     else:
         protocol = sys.argv[1]
     rule_name = 'Claire'  # can be either of 'Claire', 'Clopath' or 'Triplet'

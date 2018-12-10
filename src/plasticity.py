@@ -85,15 +85,16 @@ Clopath_exIF_parameters = {'PlasticityRule': 'Clopath',
 
 Claire_LIF_parameters = {'PlasticityRule': 'Claire',
                          'v_increase_init': 2. * mV,
-                         'b_theta': 10000 * ms,
-                         'Theta_low': 2 * mV,  # depolarization threshold for plasticity
-                         'Theta_high': 12 * mV,
+                         'b_theta': 1077 * ms,
+                         'Theta_low': -55 * mV,  # depolarization threshold for plasticity
+                         'Theta_high': -45 * mV,
                          'x_reset': 1.,  # spike trace reset value'
-                         'A_LTD': 0.02,  # depression amplitude
-                         'A_LTP': 0.03,  # potentiation amplitude
-                         'tau_lowpass1': 50 * ms,  # = tau_minus
-                         'tau_lowpass2': 2 * ms,  # = tau_plus
-                         'tau_m': 15. * ms,
+                         'A_LTD': 0.1,  # depression amplitude
+                         'A_LTP': 0.01795,  # potentiation amplitude
+                         'tau_lowpass1': 52.63 * ms,  # = tau_minus
+                         'tau_lowpass2': 3.04 * ms,  # = tau_plus
+                         'tau_theta': 114.9 * ms,
+                         'tau_x': 4.877 * ms,
                          'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
                          'w_max': 1.,
                          'init_weight': 0.5,  # initial synaptic weight
@@ -101,15 +102,16 @@ Claire_LIF_parameters = {'PlasticityRule': 'Claire',
 
 Claire_exIF_parameters = {'PlasticityRule': 'Claire',
                           'v_increase_init': 2. * mV,
-                          'b_theta': 10000 * ms,
-                          'Theta_low': 2 * mV,  # depolarization threshold for plasticity
-                          'Theta_high': 12 * mV,
+                          'b_theta': 1077 * ms,
+                          'Theta_low': -55 * mV,  # depolarization threshold for plasticity
+                          'Theta_high': -45 * mV,
                           'x_reset': 1.,  # spike trace reset value'
-                          'A_LTD': 0.02,  # depression amplitude
-                          'A_LTP': 0.03,  # potentiation amplitude
-                          'tau_lowpass1': 50 * ms,  # = tau_minus
-                          'tau_lowpass2': 2 * ms,  # = tau_plus
-                          'tau_m': 15. * ms,
+                          'A_LTD': 0.1,  # depression amplitude
+                          'A_LTP': 0.01795,  # potentiation amplitude
+                          'tau_lowpass1': 52.63 * ms,  # = tau_minus
+                          'tau_lowpass2': 3.04 * ms,  # = tau_plus
+                          'tau_theta': 114.9 * ms,
+                          'tau_x': 4.877 * ms,
                           'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
                           'w_max': 1.,
                           'init_weight': 0.348,  # initial synaptic weight
@@ -225,8 +227,10 @@ def get_claire(plasticity_parameters):
               'b_theta': plasticity_parameters['b_theta'],
               'Theta_low_zero': plasticity_parameters['Theta_low'],
               'Theta_high': plasticity_parameters['Theta_high'],
-              'tau_x': plasticity_parameters['tau_m'],
+              'tau_x': plasticity_parameters['tau_x'],
               'tau_lowpass1': plasticity_parameters['tau_lowpass1'],
+              'tau_lowpass2': plasticity_parameters['tau_lowpass2'],
+              'tau_theta': plasticity_parameters['tau_theta'],
               'w_max': plasticity_parameters['w_max'],
               'x_reset': plasticity_parameters['x_reset']}
 
@@ -237,7 +241,7 @@ def get_claire(plasticity_parameters):
     syn_eqs += '''wLTP = A_LTP * pre_x_trace * (v_lowpass2 - Theta_high)'''
     syn_eqs += ''' * int(v_lowpass2/mV - Theta_high/mV > 0) : volt\n'''
     syn_eqs += '''dtheta/dt = (wLTP - theta) / tau_lowpass1 : volt (clock-driven)\n'''
-    syn_eqs += '''Theta_low = Theta_low_zero + b_theta * (wLTP - theta) / tau_lowpass1: volt\n'''
+    syn_eqs += '''Theta_low = Theta_low_zero + b_theta * (wLTP - theta) / tau_theta: volt\n'''
     syn_eqs += '''dw_ampa/dt = (wLTP - wLTD)/(mV*ms) : 1 (clock-driven)\n'''
 
     # equations executed only when a pre-synaptic spike occurs
