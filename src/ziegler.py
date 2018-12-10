@@ -10,8 +10,8 @@
 """
 
 import sys
+import numpy as np
 import weight_class as wc
-from plot_triplet_parameters import *
 
 
 def main(plasticity, stimulation, neuron, plotting, saving, veto, homeo, debug):
@@ -102,6 +102,8 @@ def main(plasticity, stimulation, neuron, plotting, saving, veto, homeo, debug):
 
     # Plot Results
     if plotting:
+        
+        from plot_triplet_parameters import *
 
         # Plot final weight distribution
         plt.hist(w_single_end, bins=50, alpha=0.3)
@@ -129,6 +131,9 @@ def main(plasticity, stimulation, neuron, plotting, saving, veto, homeo, debug):
         plt.show()
 
     if debug:
+        
+        from plot_triplet_parameters import *
+
         # Plot voltage trace of a postsynaptic neuron
         for i in range(100):
             plt.plot(m['post_monitor'].v[i][9000:])
