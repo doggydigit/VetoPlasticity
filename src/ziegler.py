@@ -5,15 +5,28 @@
     Author: Matthias Tsai
     Email: matthias.chinyen.tsai@gmail.com
     Date created: 27/11/2018
-    Date last modified: 4/25/2013
+    Date last modified: ...
     Python Version: 2.7
 """
 
+import sys
 import weight_class as wc
 from plot_triplet_parameters import *
 
 
-def main(plasticity, stimulation, neuron, path, veto, homeo, debug):
+def main(plasticity, stimulation, neuron, plotting, saving, veto, homeo, debug):
+    """
+    Simulate a stimulation protocol with the desired neuron model and plasticity rule to monitor the resulting synaptic
+    weight dynamics. This can also plot or save some results of the simulation.
+    :param plasticity: plasticity rule to use; can be either of 'Claire', 'Clopath' or 'Triplet'
+    :param stimulation: stimulation protocol; can be either of test, sTET, wTET, sLFS, wLFS or STDP
+    :param neuron: neuron model; can be either of default, LIF, exIF, Adex or Ziegler
+    :param plotting: bool whether or not to plot some results of the simulation
+    :param saving: bool whether or not to save the weight dynamics
+    :param veto: bool whether or not to use a veto mechanism between LTP and LTD
+    :param homeo: bool whether or not to use a homeostasis term in the plasticity
+    :param debug: bool whether or not to have a more verbose output and simplified simulation
+    """
 
     # Stimulation protocol parameters
     if stimulation:
@@ -50,7 +63,7 @@ def main(plasticity, stimulation, neuron, path, veto, homeo, debug):
         if post_neuron_parameters['model'] == 'exIF':
             plasticity_parameters = wc.Claire_exIF_parameters
         else:
-            plasticity_parameters = wc.Claire_parameters
+            plasticity_parameters = wc.Claire_LIF_parameters
     else:
         plasticity_parameters = wc.Hippo_plasticity_parameters
 
@@ -81,55 +94,65 @@ def main(plasticity, stimulation, neuron, path, veto, homeo, debug):
     # Run simulation
     m = ex.run(syn_parameters=record_syn, pre_parameters=record_pre, post_parameters=record_post, pre_spikes=True,
                post_spikes=True)
+    print('Simulation terminated successully!\n')
 
     # Output results
+    w_single_end = m['syn_monitor'].w_ampa[:, -1]  # these are the weights at the end of LTP
+    print("Average weight values after protocol is " + str(np.mean(w_single_end)))
 
-    # w_single_end = m['syn_monitor'].w_ampa[:, -1]  # these are the weights at the end of LTP
-    #
-    # print(w_single_end)
-    #
-    # plt.rcParams['figure.figsize'] = (22, 5)
-    #
-    # # plot final weight distribution
-    # plt.hist(w_single_end, bins=50, alpha=0.3)
-    # plt.ylabel('Occurrency', fontsize=14)
-    # plt.xlabel('Weight value at the end of LTP', fontsize=14)
-    # plt.show()
-    # if path is not None:
-    #     plt.savefig(path + "weight_hist_after_LTP.pdf", format="PDF")
-    #
-    # # Plot spikes in time
-    # plt.figure()
-    # plot_spikes(m, title='Spikes,Nb={},d={},NB={},D={}'.format(wc.testing_protocol_parameters['nr_pulses'],
-    #                                                            wc.testing_protocol_parameters['hro'],
-    #                                                            wc.testing_protocol_parameters['nr_blocks'],
-    #                                                            wc.testing_protocol_parameters['dt']))
-    # plt.show()
-    #
-    # Plot weight dynamics
-    nr = m['syn_monitor'].w_ampa.shape[1]
-    time_axis = list(range(nr))
-    w_avg = np.mean(m['syn_monitor'].w_ampa, 0)
-    w_std = np.std(m['syn_monitor'].w_ampa, 0)
-    kwargs = {'color': 'y'}
-    plt.figure()
-    plt.plot(w_avg, 'k')
-    plt.fill_between(time_axis, np.clip(w_avg - w_std, 0, None), w_avg + w_std, **kwargs)
-    plt.show()
+    # Plot Results
+    if plotting:
 
-    # Plot voltage trace of a postsynaptic neuron
-    for i in range(100):
-        plt.figure()
-        plt.plot(m['post_monitor'].v[i])
+        # Plot final weight distribution
+        plt.hist(w_single_end, bins=50, alpha=0.3)
+        plt.ylabel('Occurrency', fontsize=14)
+        plt.xlabel('Weight value after ' + stimulation + ' plasticity protocol', fontsize=14)
         plt.show()
+        plt.savefig("../fig/weight_hist_after_" + stimulation + "_plasticity.pdf", format="PDF")
+
+        # Plot spikes in time
+        plot_spikes(m, title='Spikes,Nb={},d={},NB={},D={}'.format(protocol_parameters['nr_pulses'],
+                                                                   protocol_parameters['hro'],
+                                                                   protocol_parameters['nr_blocks'],
+                                                                   ex.timestep))
+        plt.show()
+
+        # Plot weight dynamics
+        nr = m['syn_monitor'].w_ampa.shape[1]
+        time_axis = list(range(nr))
+        w_avg = np.mean(m['syn_monitor'].w_ampa, 0)
+        w_std = np.std(m['syn_monitor'].w_ampa, 0)
+        kwargs = {'color': 'y'}
+        plt.figure()
+        plt.plot(w_avg, 'k')
+        plt.fill_between(time_axis, np.clip(w_avg - w_std, 0, None), w_avg + w_std, **kwargs)
+        plt.show()
+
+    if debug:
+        # Plot voltage trace of a postsynaptic neuron
+        for i in range(100):
+            plt.plot(m['post_monitor'].v[i][9000:])
+            plt.show()
+
+    # Save monitored weights
+    if saving:
+        import pickle
+        v = '_veto' if veto else ''
+        with open('../data/' + protocol + v + '.pickle', 'wb') as handle:
+            pickle.dump(m['syn_monitor'].w_ampa, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
+
     # Simulation choices
-    rule_name = 'Clopath'  # can be either of 'Claire', 'Clopath' or 'Triplet'
-    protocol = 'test'  # can be either of test, sTET, wTET, sLFS, wLFS or STDP
-    neuron_types = 'exIF'  # can be either of default, LIF, exIF, Ziegler
-    save_path = '/home/chi/Documents/Study/LCN/project/fig/'  # directory where to save resulting figures
+    if len(sys.argv) == 1:
+        protocol = 'test'  # can be either of test, sTET, wTET, sLFS, wLFS or STDP
+    else:
+        protocol = sys.argv[1]
+    rule_name = 'Claire'  # can be either of 'Claire', 'Clopath' or 'Triplet'
+    neuron_types = 'Adex'  # can be either of default, LIF, exIF, Ziegler
+    plot = False  # whether or not to plot some results of the simulation
+    save = True  # whether or not to save the weight dynamics
 
     # Run
-    main(rule_name, protocol, neuron_types, save_path, veto=True, homeo=False, debug=True)
+    main(rule_name, protocol, neuron=neuron_types, plotting=plot, saving=save, veto=False, homeo=False, debug=False)

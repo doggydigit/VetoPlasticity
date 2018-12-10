@@ -79,7 +79,7 @@ exIF_post_parameters = {'model': 'exIF',
                         'nr': 100,
                         'dt': 0.01 * ms,  # (MT) Integration time step
                         'V_rest': -70. * mV,  # (MT) Resting potential
-                        'V_reset_Adex': -70. * mV,  # (MT) Voltage to which potential is reset after spike for Adex
+                        'V_reset_Adex': -65. * mV,  # (MT) Voltage to which potential is reset after spike for Adex
                         'V_reset_exIF': -65. * mV,  # (MT) Voltage to which potential is reset after spike for no Adex
                         'V_thresh': 40. * mV,  # (MT) Spiking threshold potential at which voltage is reset
                         'V_rh': -50. * mV,  # (MT) Rheobase (threshold voltage from which exponential term takes over)
@@ -91,9 +91,9 @@ exIF_post_parameters = {'model': 'exIF',
                         'E_AMPA': 0. * mV,
 
                         # (MT) Adex parameters that I chose myself to have a visually pleasing spike trace:
-                        'ad_w': 4 * nS,  # (MT) weight adaption voltage coupling
-                        'b_w': 100. * namp,  # (MT) current nodge to adaptation parameter at each postsynaptic spike
-                        'tau_w': 0.02 * ms,  # (MT) weight adaption time constant
+                        'ad_w': 10 * nS,  # (MT) weight adaption voltage coupling
+                        'b_w': 5. * namp,  # (MT) current nodge to adaptation parameter at each postsynaptic spike
+                        'tau_w': 2 * ms,  # (MT) weight adaption time constant
                         }
 
 # # (MT) HH model

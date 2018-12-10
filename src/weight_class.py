@@ -30,8 +30,8 @@ sLFS_protocol_parameters = {'stimulation_type': 'extracellular',
                             'protocol_type': 'sLFS',
                             'hro': 20. * Hz,  # stimulation frequency within blocks
                             'nr_pulses': 3,  # nr of pulses per block
-                            'window': 1. * second,
-                            'nr_blocks': 10,  # original: 900
+                            'window': 1. * second,  # orginal: 1
+                            'nr_blocks': 20,  # original: 900
                             'std': 1. * ms,  # standard deviation of the presynaptic jitter
                             }
 
@@ -42,7 +42,7 @@ wLFS_protocol_parameters = {'stimulation_type': 'extracellular',
                             'protocol_type': 'wLFS',
                             'hro': 1. * Hz,  # Arbitrary for this stimulation type (nr_pulses = 1)
                             'nr_pulses': 20,  # original: 900
-                            'window': 1. * second,  # Time between blocks
+                            'window': 1. * second,  # Time between blocks. original: 1
                             'nr_blocks': 1,  # original: 1
                             'std': 1. * ms,  # standard deviation of the presynaptic jitter
                             }
@@ -91,7 +91,7 @@ testing_protocol_parameters = {'stimulation_type': 'extracellular',
 class PlasticityProtocol:
     def __init__(self, pre_neuron_parameters=default_pre_neuron_parameters, post_neuron_parameters=LIF_post_parameters,
                  protocol_parameters=default_protocol_parameters, plasticity_parameters=Hippo_plasticity_parameters,
-                 time_around=0.020*second, same_connectivity_matrix=False, adaptation=False, veto=False, homeo=False,
+                 time_around=0.1*second, same_connectivity_matrix=False, adaptation=False, veto=False, homeo=False,
                  integration_method='euler', debug=False):
         """
         A synaptic weight change simulation class, which calculates the weight change, when the stimulation protocol
@@ -113,7 +113,7 @@ class PlasticityProtocol:
         """
 
         if debug:
-            print('\nInitialization:')
+            print('\n\n\nInitialization:')
 
             import os
             import psutil
@@ -130,6 +130,9 @@ class PlasticityProtocol:
 
         if 'dt' in post_neuron_parameters:
             defaultclock.dt = post_neuron_parameters['dt']
+            self.timestep = post_neuron_parameters['dt']
+        else:
+            self.timestep = defaultclock.dt
 
         self.protocol = protocol_parameters['protocol_type']
         self.plasticity_rule = plasticity_parameters['PlasticityRule']
@@ -163,14 +166,13 @@ class PlasticityProtocol:
         print("- Plasticity model: {}\n".format(self.plasticity_rule))
 
     def run(self, syn_parameters=False, pre_parameters=False, post_parameters=False, pre_spikes=False,
-            post_spikes=False, w_std=None):
+            post_spikes=False):
         """
         :param syn_parameters: a list of the parameters that should be recorded from the synapse, e.g. ['w_ampa', 'r_1']
         :param pre_parameters: a list of the parameters that should be recorded from the presynaptic neuron.
         :param post_parameters: a list of the parameters that should be recorded from the postsynaptic neuron.
         :param pre_spikes: True or False, whether the spike times of the presynaptic neuron are desired as an output.
         :param post_spikes: True or False, whether the spike times of the postsynaptic neuron are desired as an output.
-        :param w_std:
         :return: parameters_out, a dictionary containing all the parameters that were recorded, with keys syn_monitor,
         pre_monitor, post_monitor, pre_spikes, post_spikes (the ones that were asked).
         """
@@ -180,27 +182,11 @@ class PlasticityProtocol:
         init_weight = self.plasticity_parameters['init_weight']
         neuron_pre = self.neuron_pre
         neuron_post = self.neuron_post
-
         syn = self.syn
+        syn.w_ampa = init_weight
         if self.debug:
             print('before initialization, w.shape = ' + str(syn.w_ampa.shape))
             print(self.process.memory_info().rss)
-
-        weights_equal = True
-
-        if type(init_weight) == int or type(init_weight) == float:
-            if weights_equal:
-                # (GD) It is given as input in the 'run' function
-                # --> I suppose this means that you want all the weights equal, otherwise you rndize them
-                syn.w_ampa = init_weight
-            else:
-                if w_std is None:
-                    print('Standard deviation of weights set to 0.05, no input given.')
-                    w_std = 0.05
-
-                syn.w_ampa = np.rnd.normal(init_weight, w_std, syn.w_ampa.shape)
-        else:
-            syn.w_ampa = init_weight
 
         # Define monitors
         parameters_out = {}

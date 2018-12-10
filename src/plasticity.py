@@ -83,24 +83,24 @@ Clopath_exIF_parameters = {'PlasticityRule': 'Clopath',
                            # to spike by a stimulation pulse; before this fraction is set by calibrate_amplitude().
                            }
 
-Claire_parameters = {'PlasticityRule': 'Claire',
-                     'v_increase_init': 2. * mV,
-                     'b_theta': 10000 * ms,
-                     'Theta_low': 2 * mV,  # depolarization threshold for plasticity
-                     'Theta_high': 12 * mV,
-                     'x_reset': 1.,  # spike trace reset value'
-                     'A_LTD': 0.02,  # depression amplitude
-                     'A_LTP': 0.03,  # potentiation amplitude
-                     'tau_lowpass1': 50 * ms,  # = tau_minus
-                     'tau_lowpass2': 2 * ms,  # = tau_plus
-                     'tau_m': 15. * ms,
-                     'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
-                     'w_max': 1.,
-                     'init_weight': 0.5,  # initial synaptic weight
-                     }
+Claire_LIF_parameters = {'PlasticityRule': 'Claire',
+                         'v_increase_init': 2. * mV,
+                         'b_theta': 10000 * ms,
+                         'Theta_low': 2 * mV,  # depolarization threshold for plasticity
+                         'Theta_high': 12 * mV,
+                         'x_reset': 1.,  # spike trace reset value'
+                         'A_LTD': 0.02,  # depression amplitude
+                         'A_LTP': 0.03,  # potentiation amplitude
+                         'tau_lowpass1': 50 * ms,  # = tau_minus
+                         'tau_lowpass2': 2 * ms,  # = tau_plus
+                         'tau_m': 15. * ms,
+                         'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
+                         'w_max': 1.,
+                         'init_weight': 0.5,  # initial synaptic weight
+                         }
 
 Claire_exIF_parameters = {'PlasticityRule': 'Claire',
-                          'v_increase_init': 20. * mV,
+                          'v_increase_init': 2. * mV,
                           'b_theta': 10000 * ms,
                           'Theta_low': 2 * mV,  # depolarization threshold for plasticity
                           'Theta_high': 12 * mV,
@@ -112,7 +112,8 @@ Claire_exIF_parameters = {'PlasticityRule': 'Claire',
                           'tau_m': 15. * ms,
                           'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
                           'w_max': 1.,
-                          'init_weight': 0.123,  # initial synaptic weight
+                          'init_weight': 0.348,  # initial synaptic weight
+                          'init_stimulation_fraction': 0.223
                           }
 
 default_consolidationParams = {'tau_w_ampa': 3600 * second,
@@ -170,7 +171,7 @@ def get_clopath(plasticity_parameters):
               'step': defaultclock.dt}
 
     # equations executed at every time step
-    syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''###(MT)THIS IS INEFFICIENT BECAUSE IT COMPUTES PREXTRACE FOR EACH SYNAPSE AND NOT EACH PRESYNAPTIC NEURONX
+    syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''  ###(MT)THIS IS INEFFICIENT BECAUSE IT COMPUTES PREXTRACE FOR EACH SYNAPSE AND NOT EACH PRESYNAPTIC NEURONX
     syn_eqs += '''dw_ampa/dt = A_LTP * pre_x_trace * (v/mV - Theta_high/mV) * (v_lowpass2_post/mV - Theta_low/mV)'''
     syn_eqs += ''' * int(v/mV - Theta_high/mV > 0) * int(v_lowpass2_post/mV - Theta_low/mV > 0) /ms'''
     syn_eqs += ''' * int(w_max - w_ampa > 0) + int(w_max - w_ampa < 0) * (w_max - w_ampa) / step: 1 (clock-driven)\n'''
