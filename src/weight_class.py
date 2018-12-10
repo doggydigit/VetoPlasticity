@@ -54,7 +54,7 @@ wTET_protocol_parameters = {'stimulation_type': 'extracellular',
                             'protocol_type': 'wTET',
                             'hro': 100. * Hz,  # stimulation frequency within blocks
                             'nr_pulses': 21,  # original: 21
-                            'window': 1. * second,  # Arbitrary for this stimulation type (nr_blocks = 1)
+                            'window': 0.01 * second,  # Arbitrary for this stimulation type (nr_blocks = 1)
                             'nr_blocks': 1,  # original: 1
                             'std': 1. * ms,  # standard deviation of the presynaptic jitter
                             }
@@ -194,7 +194,7 @@ class PlasticityProtocol:
         if syn_parameters:
             # (GD) StateMonitor and SpikeMonitor are Brian2 functions that record events and spikes respectively from
             # a NeuronGroup or another event source
-            syn_monitor = StateMonitor(syn, syn_parameters, record=True, dt=10*ms)
+            syn_monitor = StateMonitor(syn, syn_parameters, record=True, dt=1*ms)
             parameters_out['syn_monitor'] = syn_monitor
 
         if pre_spikes:
@@ -302,8 +302,8 @@ class PlasticityProtocol:
         neuron_out.v = neuronparams['V_rest']
         neuron_out.g_ampa = 0
         if self.plasticity_parameters['PlasticityRule'] in ['Clopath', 'Claire']:
-            neuron_out.v_lowpass1 = 0
-            neuron_out.v_lowpass2 = 0
+            neuron_out.v_lowpass1 = neuronparams['V_rest']
+            neuron_out.v_lowpass2 = neuronparams['V_rest']
             if self.homeo:
                 neuron_out.v_homeo = 0
 
