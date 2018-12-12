@@ -412,7 +412,7 @@ class PlasticityProtocol:
                 params, pre_eqs, syn_eqs, post_eqs = get_clopath(self.plasticity_parameters)
 
         elif self.plasticity_parameters['PlasticityRule'] == 'Claire':
-            params, pre_eqs, syn_eqs, post_eqs = get_claire(self.plasticity_parameters)
+            params, pre_eqs, syn_eqs, post_eqs = get_claire(self.plasticity_parameters, self.veto)
 
         else:
             raise ValueError
