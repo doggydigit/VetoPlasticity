@@ -423,6 +423,8 @@ class PlasticityProtocol:
 
         # (GD) this connects all neuron pairs with given prob
         syn.connect(p=self.pre_neuron_parameters['connect_prob'])
+        if self.veto:
+            syn.theta = self.plasticity_parameters['Theta_low']
 
         if self.debug:
             print('synapse made according to ', self.plasticity_parameters['PlasticityRule'])

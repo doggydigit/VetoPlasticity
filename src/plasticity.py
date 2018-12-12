@@ -106,8 +106,10 @@ Claire_exIF_parameters = {'PlasticityRule': 'Claire',
                           'Theta_low': -55 * mV,  # depolarization threshold for plasticity
                           'Theta_high': -45 * mV,
                           'x_reset': 1.,  # spike trace reset value'
-                          'A_LTD': 0.1,  # depression amplitude
-                          'A_LTP': 0.01795,  # potentiation amplitude
+                          'A_LTD': 1000,  # depression amplitude
+                          'A_LTP': 1795,  # potentiation amplitude
+                          #'A_LTD': 0.1,  # depression amplitude
+                          #'A_LTP': 0.01795,  # potentiation amplitude
                           'tau_lowpass1': 52.63 * ms,  # = tau_minus
                           'tau_lowpass2': 3.04 * ms,  # = tau_plus
                           'tau_theta': 114.9 * ms,
@@ -236,21 +238,22 @@ def get_claire(plasticity_parameters, veto=True):
     # equations executed at every time step
     syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''
     syn_eqs += '''wLTD = A_LTD * pre_x_trace * (v_lowpass1 - Theta_low)'''
-    syn_eqs += ''' * int(v_lowpass1/mV - Theta_low/mV > 0) : volt\n'''
+    syn_eqs += ''' * int(v_lowpass1/mV - Theta_low/mV > 0) * int(w_ampa > 0) : volt\n'''
     syn_eqs += '''wLTP = A_LTP * pre_x_trace * (v_lowpass2 - Theta_high)'''
-    syn_eqs += ''' * int(v_lowpass2/mV - Theta_high/mV > 0) : volt\n'''
-    syn_eqs += '''dtheta/dt = (wLTP - theta) / tau_lowpass1 : volt (clock-driven)\n'''
+    syn_eqs += ''' * int(v_lowpass2/mV - Theta_high/mV > 0) * int(w_max > w_ampa) : volt\n'''
     syn_eqs += '''dw_ampa/dt = (wLTP - wLTD)/(mV*ms) : 1 (clock-driven)\n'''
 
     # Add veto equations if required
     if veto:
         params['Theta_low_zero'] = plasticity_parameters['Theta_low']
+        syn_eqs += '''dtheta/dt = (wLTP - theta) / tau_theta : volt (clock-driven)\n'''
         syn_eqs += '''Theta_low = Theta_low_zero + b_theta * (wLTP - theta) / tau_theta: volt\n'''
     else:
         params['Theta_low'] = plasticity_parameters['Theta_low']
 
     # equations executed only when a pre-synaptic spike occurs
     pre_eqs = '''g_ampa += w_ampa * ampa_max_cond  # increment synaptic conductance\n'''
+    pre_eqs += '''w_ampa = clip(w_ampa, 0, w_max)\n'''
     pre_eqs += '''pre_x_trace += x_reset / (tau_x/ms)  # spike trace\n'''
 
     # equations executed only when a post-synaptic spike occurs
