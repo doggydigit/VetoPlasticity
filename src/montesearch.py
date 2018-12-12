@@ -110,7 +110,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
     # Monte-Carlo iterations
     current_score = 0
-    nr_iterations = 1
+    nr_iterations = 100
     print('\nStarting Monte-Carlo optimization:')
     for i in range(nr_iterations):
 
