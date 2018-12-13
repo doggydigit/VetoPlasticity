@@ -1,0 +1,8 @@
+# All logs
+src/log*
+
+# All python compiled files
+src/*.pyc
+
+# All pickle files
+data/*.pickle
