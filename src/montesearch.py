@@ -245,6 +245,15 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 if protoscore > new_score:
                     new_score = protoscore
 
+                if np.isnan(end_weights[protocol][0]):
+                    print('##########################################################################################\n'
+                          'FFFFUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCCCCCCCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n'
+                          '##########################################################################################\n'
+                          '                       You got NaN\n'
+                          '##########################################################################################\n')
+                    print(new_indexes)
+                    print(new_parameters)
+
                 print('End mean weights for protocol {} are: {}'.format(protocol, end_weights[protocol][0]))
                 print('Initial weights were {}'.format(initial_weights))
                 print('Protoscore is {}'.format(protoscore))
@@ -289,4 +298,4 @@ if __name__ == "__main__":
     # Run
     main(rule_name, neuron=neuron_types, veto=vetoing, debug=False)
     
-    print('\nMonte-Carlo search finished successfully!)
+    print('\nMonte-Carlo search finished successfully!')

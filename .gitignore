@@ -6,3 +6,12 @@ src/*.pyc
 
 # All pickle files
 data/*.pickle
+
+# All old data files
+data/Spike*.txt
+fig/*
+
+# iPython stuff
+src/.idea/*
+src/*ipynb*
+src/__pycache__/*
