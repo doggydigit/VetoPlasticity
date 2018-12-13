@@ -31,7 +31,7 @@ sLFS_protocol_parameters = {'stimulation_type': 'extracellular',
                             'hro': 20. * Hz,  # stimulation frequency within blocks
                             'nr_pulses': 3,  # nr of pulses per block
                             'window': 1. * second,  # orginal: 1
-                            'nr_blocks': 20,  # original: 900
+                            'nr_blocks': 200,  # original: 900
                             'std': 1. * ms,  # standard deviation of the presynaptic jitter
                             }
 
