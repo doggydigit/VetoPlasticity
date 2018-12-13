@@ -201,10 +201,20 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         homeo=homeo,
                                         debug=debug)
 
-                # Calibration of initial synaptic weights in order to produce a specific EPSP amplitude from a single
-                # presynaptic spike. This value is defined in plasticity_parameters['v_increase_init'].
-                ex.calibrate_w_init(std_cal=protocol_parameters['std'])
-                initial_weights = ex.plasticity_parameters['init_weight']
+                try:
+                    # Calibration of initial synaptic weights in order to produce a specific EPSP amplitude from a
+                    # single presynaptic spike. This value is defined in plasticity_parameters['v_increase_init'].
+                    ex.calibrate_w_init(std_cal=protocol_parameters['std'])
+                    initial_weights = ex.plasticity_parameters['init_weight']
+                except SystemError:
+                    the_table.delete(id=query_id)
+                    db.commit()
+                    print('#########################################################################################\n'
+                          'Weights initialized too small\n'
+                          '#########################################################################################\n')
+                    print(new_indexes)
+                    print(new_parameters)
+                    return 1
 
                 # Calibration of the fraction of presynaptic neurons triggered to spike by an extracellular stimulation
                 #  pulse in order to lead to a specific percentage of postsynaptic neurons to fire
@@ -255,6 +265,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                           '#########################################################################################\n')
                     print(new_indexes)
                     print(new_parameters)
+                    return 2
 
                 print('End mean weights for protocol {} are: {}'.format(protocol, end_weights[protocol][0]))
                 print('Initial weights were {}'.format(initial_weights))
