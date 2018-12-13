@@ -300,6 +300,8 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
         print('    Score = {}'.format(current_score))
 
+    return 0
+
 
 if __name__ == "__main__":
     # Simulation choices
@@ -308,6 +310,9 @@ if __name__ == "__main__":
     vetoing = True  # whether or not to use a veto mechanism between LTP and LTD
 
     # Run
-    main(rule_name, neuron=neuron_types, veto=vetoing, debug=False)
+    exi = main(rule_name, neuron=neuron_types, veto=vetoing, debug=False)
 
-    print('\nMonte-Carlo search finished successfully!')
+    if exi is 0:
+        print('\nMonte-Carlo search finished successfully!')
+    else:
+        print('\nAn error occured...')
