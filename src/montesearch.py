@@ -51,8 +51,8 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
     """
 
     # Stimulation protocol parameters
-    protocols = [sTET_protocol_parameters, wTET_protocol_parameters,
-                 sLFS_protocol_parameters, wLFS_protocol_parameters]
+    protocols = [wLFS_protocol_parameters, wTET_protocol_parameters,
+                 sLFS_protocol_parameters, sTET_protocol_parameters]
 
     # Presynaptic neuron parameters
     pre_neuron_parameters = ziegler_pre_parameters
