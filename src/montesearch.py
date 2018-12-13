@@ -219,9 +219,20 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 # Save initial weights for later computation of the protocol plasticity and score
                 initial_weights = ex.plasticity_parameters['init_weight']
 
-                # Calibration of the fraction of presynaptic neurons triggered to spike by an extracellular stimulation
-                #  pulse in order to lead to a specific percentage of postsynaptic neurons to fire
-                ex.calibrate_amplitude(std_cal=protocol_parameters['std'])
+                # Make sure to catch any error due to extracellular stimulation calibration
+                try:
+                    # Calibration of the fraction of presynaptic neurons triggered to spike by an extracellular
+                    # stimulation pulse in order to lead to a specific percentage of postsynaptic neurons to fire
+                    ex.calibrate_amplitude(std_cal=protocol_parameters['std'])
+                except SystemError:
+                    the_table.delete(id=query_id)
+                    db.commit()
+                    print('#########################################################################################\n'
+                          'Initial extracellular stimulation too small\n'
+                          '#########################################################################################\n')
+                    print(new_indexes)
+                    print(new_parameters)
+                    return 1
 
                 # Define which values will be monitored/saved during the simulation
                 record_syn = 'w_ampa'

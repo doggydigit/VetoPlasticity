@@ -117,7 +117,7 @@ Claire_exIF_parameters = {'PlasticityRule': 'Claire',
                           'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
                           'w_max': 1.,
                           'init_weight': 0.7,  # initial synaptic weight (good value is 0.348)
-                          'init_stimulation_fraction': 0.223
+                          'init_stimulation_fraction': 1
                           }
 
 default_consolidationParams = {'tau_w_ampa': 3600 * second,
