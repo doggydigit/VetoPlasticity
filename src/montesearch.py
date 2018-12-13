@@ -288,3 +288,5 @@ if __name__ == "__main__":
 
     # Run
     main(rule_name, neuron=neuron_types, veto=vetoing, debug=False)
+    
+    print('\nMonte-Carlo search finished successfully!)
