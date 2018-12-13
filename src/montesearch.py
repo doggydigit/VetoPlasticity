@@ -161,17 +161,17 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
             # Create that row and temporarily put a score of zero to prevent other processors to compute it again
             if veto:
-                id = the_table.insert(dict(th=new_indexes['Theta_high'], tl=new_indexes['Theta_low'],
-                                           ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'],
-                                           t1=new_indexes['tau_lowpass1'], t2=new_indexes['tau_lowpass2'],
-                                           tx=new_indexes['tau_x'], bt=new_indexes['b_theta'],
-                                           tt=new_indexes['tau_theta'], score=0))
+                query_id = the_table.insert(dict(th=new_indexes['Theta_high'], tl=new_indexes['Theta_low'],
+                                                 ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'],
+                                                 t1=new_indexes['tau_lowpass1'], t2=new_indexes['tau_lowpass2'],
+                                                 tx=new_indexes['tau_x'], bt=new_indexes['b_theta'],
+                                                 tt=new_indexes['tau_theta'], score=0))
 
             else:
-                id = the_table.insert(dict(th=new_indexes['Theta_high'], tl=new_indexes['Theta_low'],
-                                           ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'],
-                                           t1=new_indexes['tau_lowpass1'], t2=new_indexes['tau_lowpass2'],
-                                           tx=new_indexes['tau_x'], score=0))
+                query_id = the_table.insert(dict(th=new_indexes['Theta_high'], tl=new_indexes['Theta_low'],
+                                                 ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'],
+                                                 t1=new_indexes['tau_lowpass1'], t2=new_indexes['tau_lowpass2'],
+                                                 tx=new_indexes['tau_x'], score=0))
             db.commit()
 
             # ##########################################################################################################
@@ -246,11 +246,12 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     new_score = protoscore
 
                 if np.isnan(end_weights[protocol][0]):
-                    print('##########################################################################################\n'
-                          'FFFFUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCCCCCCCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n'
-                          '##########################################################################################\n'
+                    the_table.delete(id=query_id)
+                    print('#########################################################################################\n'
+                          'FFFFUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCCCCCCCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n'
+                          '#########################################################################################\n'
                           '                       You got NaN\n'
-                          '##########################################################################################\n')
+                          '#########################################################################################\n')
                     print(new_indexes)
                     print(new_parameters)
 
@@ -261,7 +262,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             if broken:
                 new_score = 0
 
-            the_table.update(dict(id=id, score=new_score), ['id'])
+            the_table.update(dict(id=query_id, score=new_score), ['id'])
             db.commit()
 
         else:
@@ -289,7 +290,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
 
 if __name__ == "__main__":
-
     # Simulation choices
     rule_name = 'Claire'  # can be either of 'Claire', 'Clopath' or 'Triplet'
     neuron_types = 'Adex'  # can be either of default, LIF, exIF, Ziegler
@@ -297,5 +297,5 @@ if __name__ == "__main__":
 
     # Run
     main(rule_name, neuron=neuron_types, veto=vetoing, debug=False)
-    
+
     print('\nMonte-Carlo search finished successfully!')
