@@ -247,6 +247,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
                 if np.isnan(end_weights[protocol][0]):
                     the_table.delete(id=query_id)
+                    db.commit()
                     print('#########################################################################################\n'
                           'FFFFUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCCCCCCCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n'
                           '#########################################################################################\n'
