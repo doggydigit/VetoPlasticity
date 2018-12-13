@@ -103,7 +103,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
     print('Parameters initialized')
 
     # Connect to database (Sqlite database corresponding to the plasticity model used)
-    db_name = '../data/monteresults.db'
+    db_name = '../data/montetestresults.db'
     db = dataset.connect('sqlite:///' + db_name)
     table_name = plasticity + '_veto' if veto else plasticity + '_noveto'
     the_table = db.create_table(table_name)
@@ -121,7 +121,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         #                                              Modify one parameter
         # ##############################################################################################################
 
-        # Rand0mized seed (because it might not be due to Plasticity class
+        # Randomized seed (because it might not be due to Plasticity class
         rnd.seed()
 
         # Select parameter to modify and make copy of all parameters to work with
@@ -134,13 +134,15 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         if direction:
             new_indexes[param_name] += 1
             if new_indexes[param_name] > grid_params[param_name]:
-                print('Wall reached with parameter {} for index {}'.format(param_name, new_indexes[param_name]))
+                if current_score > 0:
+                    print('Wall reached with parameter {} for index {}'.format(param_name, new_indexes[param_name]))
                 continue
 
         else:
             new_indexes[param_name] -= 1
             if new_indexes[param_name] < 1:
-                print('Wall reached with parameter {} for index {}'.format(param_name, new_indexes[param_name]))
+                if current_score > 0:
+                    print('Wall reached with parameter {} for index {}'.format(param_name, new_indexes[param_name]))
                 continue
 
         # Index shift is accepted, thus update parameter value
@@ -181,7 +183,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             # Object containing the weight changes that occured in each protocol
             end_weights = {}
             new_score = 0
-            broken = 0  # Actually unnecessary, but editor likes it
+            broken = True  # Actually unnecessary, but editor likes it
 
             # Iterate through all 4 protocols
             for protocol_parameters in protocols:
@@ -209,6 +211,8 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 except SystemError:
                     the_table.delete(id=query_id)
                     db.commit()
+                    if not debug:
+                        sys.stdout = sys.__stdout__
                     print('#########################################################################################\n'
                           'Weights initialized too small\n'
                           '#########################################################################################\n')
@@ -227,6 +231,8 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 except SystemError:
                     the_table.delete(id=query_id)
                     db.commit()
+                    if not debug:
+                        sys.stdout = sys.__stdout__
                     print('#########################################################################################\n'
                           'Initial extracellular stimulation too small\n'
                           '#########################################################################################\n')
@@ -234,56 +240,42 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     print(new_parameters)
                     return 1
 
-                # Define which values will be monitored/saved during the simulation
-                record_syn = 'w_ampa'
-
                 # Run simulation
-                m = ex.run(syn_parameters=record_syn, pre_parameters=None, post_parameters=None,
-                           pre_spikes=True, post_spikes=True)
+                ex.run()
 
                 # Reenable printing of outputs
                 if not debug:
                     sys.stdout = sys.__stdout__
 
                 protocol = protocol_parameters['protocol_type']
-                end_weights[protocol] = [np.mean(m['syn_monitor'].w_ampa[:, -1], 0),
-                                         np.std(m['syn_monitor'].w_ampa[:, -1], 0)]
+                end_weights[protocol] = np.mean(np.array(ex.syn.w_ampa))
 
+                # If plasticity parameters lead to extreme dynamics producing NaNs, exit and assign score of zero
+                if np.isnan(end_weights[protocol]):
+                    print('Nan solution\n')
+                    broken = True
+                    break
+
+                # If xTET protocol produced LTD or xLFS protocol produced LTP, exit and assign score of zero
                 if protocol in ['sTET', 'wTET']:
-                    if end_weights[protocol][0] < initial_weights:
+                    if end_weights[protocol] < initial_weights:
                         broken = True
                         break
                     else:
                         broken = False
-                        protoscore = end_weights[protocol][0] - initial_weights
+                        protoscore = end_weights[protocol] - initial_weights
                 elif protocol in ['sLFS', 'wLFS']:
-                    if end_weights[protocol][0] < initial_weights:
+                    if end_weights[protocol] < initial_weights:
                         broken = True
                         break
                     else:
                         broken = False
-                        protoscore = initial_weights - end_weights[protocol][0]
+                        protoscore = initial_weights - end_weights[protocol]
                 else:
                     raise ValueError(protocol)
 
                 if protoscore > new_score:
                     new_score = protoscore
-
-                if np.isnan(end_weights[protocol][0]):
-                    the_table.delete(id=query_id)
-                    db.commit()
-                    print('#########################################################################################\n'
-                          'FFFFUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCCCCCCCCCCCCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n'
-                          '#########################################################################################\n'
-                          '                       You got NaN\n'
-                          '#########################################################################################\n')
-                    print(new_indexes)
-                    print(new_parameters)
-                    return 2
-
-                print('End mean weights for protocol {} are: {}'.format(protocol, end_weights[protocol][0]))
-                print('Initial weights were {}'.format(initial_weights))
-                print('Protoscore is {}'.format(protoscore))
 
             if broken:
                 new_score = 0

@@ -194,7 +194,7 @@ class PlasticityProtocol:
         if syn_parameters:
             # (GD) StateMonitor and SpikeMonitor are Brian2 functions that record events and spikes respectively from
             # a NeuronGroup or another event source
-            syn_monitor = StateMonitor(syn, syn_parameters, record=True, dt=1*ms)
+            syn_monitor = StateMonitor(syn, syn_parameters, record=True, dt=0.1*ms)
             parameters_out['syn_monitor'] = syn_monitor
 
         if pre_spikes:
