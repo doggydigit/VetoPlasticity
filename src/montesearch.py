@@ -201,11 +201,11 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         homeo=homeo,
                                         debug=debug)
 
+                # Make sure to catch any error due to initial weights calibration
                 try:
                     # Calibration of initial synaptic weights in order to produce a specific EPSP amplitude from a
                     # single presynaptic spike. This value is defined in plasticity_parameters['v_increase_init'].
                     ex.calibrate_w_init(std_cal=protocol_parameters['std'])
-                    initial_weights = ex.plasticity_parameters['init_weight']
                 except SystemError:
                     the_table.delete(id=query_id)
                     db.commit()
@@ -215,6 +215,9 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     print(new_indexes)
                     print(new_parameters)
                     return 1
+
+                # Save initial weights for later computation of the protocol plasticity and score
+                initial_weights = ex.plasticity_parameters['init_weight']
 
                 # Calibration of the fraction of presynaptic neurons triggered to spike by an extracellular stimulation
                 #  pulse in order to lead to a specific percentage of postsynaptic neurons to fire
