@@ -9,9 +9,11 @@
     Python Version: 2.7
 """
 
+from weight_class import *
 import os
 import dataset
-from weight_class import *
+import warnings
+warnings.filterwarnings("error")
 
 
 def set_param(pname, index):
@@ -182,13 +184,13 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
             # Object containing the weight changes that occured in each protocol
             end_weights = {}
-            new_score = 0
+            new_score = 666
             broken = True  # Actually unnecessary, but editor likes it
 
             # Iterate through all 4 protocols
             for protocol_parameters in protocols:
 
-                # Silence print output of the PlasticityProtocol class
+                # Silence print output (of the PlasticityProtocol class)
                 if not debug:
                     sys.stdout = open(os.devnull, 'w')
 
@@ -214,7 +216,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     if not debug:
                         sys.stdout = sys.__stdout__
                     print('#########################################################################################\n'
-                          'Weights initialized too small\n'
+                          '                           Weights initialized too small\n'
                           '#########################################################################################\n')
                     print(new_indexes)
                     print(new_parameters)
@@ -234,29 +236,34 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     if not debug:
                         sys.stdout = sys.__stdout__
                     print('#########################################################################################\n'
-                          'Initial extracellular stimulation too small\n'
+                          '                   Initial extracellular stimulation too small\n'
                           '#########################################################################################\n')
                     print(new_indexes)
                     print(new_parameters)
                     return 1
 
                 # Run simulation
-                ex.run()
+                try:
+                    ex.run()
+                except Warning:
+                    nan_bool = True
+                else:
+                    nan_bool = False
 
                 # Reenable printing of outputs
                 if not debug:
                     sys.stdout = sys.__stdout__
 
-                protocol = protocol_parameters['protocol_type']
-                end_weights[protocol] = np.mean(np.array(ex.syn.w_ampa))
-
                 # If plasticity parameters lead to extreme dynamics producing NaNs, exit and assign score of zero
-                if np.isnan(end_weights[protocol]):
+                if nan_bool:
                     print('Nan solution\n')
                     broken = True
                     break
 
-                # If xTET protocol produced LTD or xLFS protocol produced LTP, exit and assign score of zero
+                # If TET protocol produced LTD or LFS protocol produced LTP, exit and assign score of zero
+                # Else compute score for protocol
+                protocol = protocol_parameters['protocol_type']
+                end_weights[protocol] = np.mean(np.array(ex.syn.w_ampa))
                 if protocol in ['sTET', 'wTET']:
                     if end_weights[protocol] < initial_weights:
                         broken = True
@@ -274,8 +281,30 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 else:
                     raise ValueError(protocol)
 
-                if protoscore > new_score:
+                if protoscore > 1:
+                    the_table.delete(id=query_id)
+                    db.commit()
+                    print('Weights exploded with mean weights = {}'.format(end_weights[protocol]))
+                    print('The protocol is ' + protocol)
+                    print('\nParameters:')
+                    print(new_parameters)
+                    print('\nIndexes:')
+                    print(new_indexes)
+                    return 2
+
+                # Only keep the worst score of all protocols
+                if protoscore < new_score:
                     new_score = protoscore
+                elif protoscore > 1:
+                    the_table.delete(id=query_id)
+                    db.commit()
+                    print('Weird protoscore = {}'.format(protoscore))
+                    print('The protocol is ' + protocol)
+                    print('\nParameters:')
+                    print(new_parameters)
+                    print('\nIndexes:')
+                    print(new_indexes)
+                    return 3
 
             if broken:
                 new_score = 0
