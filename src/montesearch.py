@@ -105,7 +105,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
     print('Parameters initialized')
 
     # Connect to database (Sqlite database corresponding to the plasticity model used)
-    db_name = '../data/montetestresults.db'
+    db_name = '../data/monteresults.db'
     db = dataset.connect('sqlite:///' + db_name)
     table_name = plasticity + '_veto' if veto else plasticity + '_noveto'
     the_table = db.create_table(table_name)
