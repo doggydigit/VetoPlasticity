@@ -118,7 +118,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
         print('Iteration: {}'.format(i))
         sys.stdout.flush()
-        
+
         # ##############################################################################################################
         #                                              Modify one parameter
         # ##############################################################################################################
@@ -190,10 +190,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             # Iterate through all 4 protocols
             for protocol_parameters in protocols:
 
-                # Silence print output (of the PlasticityProtocol class)
-                if not debug:
-                    sys.stdout = open(os.devnull, 'w')
-
                 # Initialize main class
                 ex = PlasticityProtocol(pre_neuron_parameters=pre_neuron_parameters,
                                         post_neuron_parameters=post_neuron_parameters,
@@ -203,7 +199,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         adaptation=adaptation,
                                         veto=veto,
                                         homeo=homeo,
-                                        debug=debug)
+                                        debug=False)
 
                 # Make sure to catch any error due to initial weights calibration
                 try:
@@ -213,8 +209,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 except SystemError:
                     the_table.delete(id=query_id)
                     db.commit()
-                    if not debug:
-                        sys.stdout = sys.__stdout__
                     print('#########################################################################################\n'
                           '                           Weights initialized too small\n'
                           '#########################################################################################\n')
@@ -233,8 +227,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 except SystemError:
                     the_table.delete(id=query_id)
                     db.commit()
-                    if not debug:
-                        sys.stdout = sys.__stdout__
                     print('#########################################################################################\n'
                           '                   Initial extracellular stimulation too small\n'
                           '#########################################################################################\n')
@@ -249,10 +241,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     nan_bool = True
                 else:
                     nan_bool = False
-
-                # Reenable printing of outputs
-                if not debug:
-                    sys.stdout = sys.__stdout__
 
                 # If plasticity parameters lead to extreme dynamics producing NaNs, exit and assign score of zero
                 if nan_bool:
