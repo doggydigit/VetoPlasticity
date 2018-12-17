@@ -191,9 +191,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             # Iterate through all 4 protocols
             for protocol_parameters in protocols:
 
-                print('line 194')
-                sys.stdout.flush()
-
                 # Initialize main class
                 ex = PlasticityProtocol(pre_neuron_parameters=pre_neuron_parameters,
                                         post_neuron_parameters=post_neuron_parameters,
@@ -204,9 +201,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         veto=veto,
                                         homeo=homeo,
                                         debug=debug)
-
-                print('line 208')
-                sys.stdout.flush()
 
                 # Monitor Brian warnings especially due to NaN numerical integration errors
                 with catch_logs as brian_warnings:
@@ -236,7 +230,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                         ex.calibrate_amplitude(std_cal=protocol_parameters['std'])
                     except SystemError:
                         the_table.delete(id=query_id)
-                        db.commit()
+                        # db.commit()
                         print('#####################################################################################\n'
                               '                   Initial extracellular stimulation too small\n'
                               '#####################################################################################\n')

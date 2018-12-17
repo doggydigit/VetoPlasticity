@@ -401,9 +401,6 @@ class PlasticityProtocol:
         :return:
         """
 
-        print('line 404')
-        sys.stdout.flush()
-
         # (MT) Get the plasiticity equations depending on the chosen plasticity rule
         if self.plasticity_parameters['PlasticityRule'] == 'Triplet':
             params, pre_eqs, syn_eqs, post_eqs = get_triplet(self.plasticity_parameters)
@@ -420,23 +417,14 @@ class PlasticityProtocol:
         else:
             raise ValueError
 
-        print('line 423')
-        sys.stdout.flush()
-
         # (MT) Construct the synapses according to the equations
         syn = Synapses(source=self.neuron_pre, target=self.neuron_post, model=syn_eqs, on_pre=pre_eqs, on_post=post_eqs,
                        multisynaptic_index='synapse_number', namespace=params, method=self.method)
-
-        print('line 430')
-        sys.stdout.flush()
 
         # (GD) this connects all neuron pairs with given prob
         syn.connect(p=self.pre_neuron_parameters['connect_prob'])
         if self.veto:
             syn.theta = self.plasticity_parameters['Theta_low']
-
-        print('line 438')
-        sys.stdout.flush()
 
         if self.debug:
             print('synapse made according to ', self.plasticity_parameters['PlasticityRule'])
