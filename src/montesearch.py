@@ -10,7 +10,7 @@
 """
 
 from brian2.utils.logger import catch_logs
-from weight_class import *
+from simulation import *
 import os
 import dataset
 import warnings

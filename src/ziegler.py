@@ -10,7 +10,7 @@
 """
 
 import sys
-import weight_class as wc
+import simulation as wc
 from plot_triplet_parameters import *
 
 

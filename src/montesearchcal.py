@@ -10,7 +10,7 @@
 """
 
 from brian2.utils.logger import catch_logs
-from weight_class import *
+from simulation import *
 import dataset
 import warnings
 
@@ -124,9 +124,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         #                                              Modify one parameter
         # ##############################################################################################################
 
-        print('line 127')
-        sys.stdout.flush()
-
         # Randomized seed (because it might not be due to Plasticity class
         rnd.seed()
 
@@ -151,9 +148,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     print('Wall reached with parameter {} for index {}'.format(param_name, new_indexes[param_name]))
                 continue
 
-        print('line 154')
-        sys.stdout.flush()
-
         # Index shift is accepted, thus update parameter value
         new_parameters[param_name] = set_param(param_name, new_indexes[param_name])
 
@@ -167,9 +161,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             query = the_table.find_one(th=new_indexes['Theta_high'], tl=new_indexes['Theta_low'],
                                        ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'], t1=new_indexes['tau_lowpass1'],
                                        t2=new_indexes['tau_lowpass2'], tx=new_indexes['tau_x'])
-
-        print('line 171')
-        sys.stdout.flush()
 
         if query is None:
 
@@ -200,7 +191,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             # Iterate through all 4 protocols
             for protocol_parameters in protocols:
 
-                print('line 203')
+                print('line 194')
                 sys.stdout.flush()
 
                 # Initialize main class
@@ -214,14 +205,11 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         homeo=homeo,
                                         debug=debug)
 
-                print('line 217')
+                print('line 208')
                 sys.stdout.flush()
 
                 # Monitor Brian warnings especially due to NaN numerical integration errors
                 with catch_logs as brian_warnings:
-
-                    print('line 223')
-                    sys.stdout.flush()
 
                     # Make sure to catch any error due to initial weights calibration
                     try:
@@ -255,9 +243,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                         print(new_indexes)
                         print(new_parameters)
                         return 1
-
-                    print('line 259')
-                    sys.stdout.flush()
 
                     # Run simulation
                     try:
