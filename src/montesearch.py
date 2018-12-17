@@ -9,6 +9,7 @@
     Python Version: 2.7
 """
 
+from brian2.utils.logger import catch_logs
 from weight_class import *
 import os
 import dataset
@@ -184,8 +185,8 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
             # Object containing the weight changes that occured in each protocol
             end_weights = {}
-            new_score = 666
             broken = True  # Actually unnecessary, but editor likes it
+            nan_bool = False
 
             # Iterate through all 4 protocols
             for protocol_parameters in protocols:
@@ -205,50 +206,54 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         homeo=homeo,
                                         debug=debug)
 
-                # Make sure to catch any error due to initial weights calibration
-                try:
-                    # Calibration of initial synaptic weights in order to produce a specific EPSP amplitude from a
-                    # single presynaptic spike. This value is defined in plasticity_parameters['v_increase_init'].
-                    ex.calibrate_w_init(std_cal=protocol_parameters['std'])
-                except SystemError:
-                    the_table.delete(id=query_id)
-                    db.commit()
-                    if not debug:
-                        sys.stdout = sys.__stdout__
-                    print('#########################################################################################\n'
-                          '                           Weights initialized too small\n'
-                          '#########################################################################################\n')
-                    print(new_indexes)
-                    print(new_parameters)
-                    return 1
+                # Monitor Brian warnings especially due to NaN numerical integration errors
+                with catch_logs as brian_warnings:
 
-                # Save initial weights for later computation of the protocol plasticity and score
-                initial_weights = ex.plasticity_parameters['init_weight']
+                    # Make sure to catch any error due to initial weights calibration
+                    try:
+                        # Calibration of initial synaptic weights in order to produce a specific EPSP amplitude from a
+                        # single presynaptic spike. This value is defined in plasticity_parameters['v_increase_init'].
+                        ex.calibrate_w_init(std_cal=protocol_parameters['std'])
+                    except SystemError:
+                        the_table.delete(id=query_id)
+                        db.commit()
+                        if not debug:
+                            sys.stdout = sys.__stdout__
+                        print('#####################################################################################\n'
+                              '                         Weights initialized too small\n'
+                              '#####################################################################################\n')
+                        print(new_indexes)
+                        print(new_parameters)
+                        return 1
 
-                # Make sure to catch any error due to extracellular stimulation calibration
-                try:
-                    # Calibration of the fraction of presynaptic neurons triggered to spike by an extracellular
-                    # stimulation pulse in order to lead to a specific percentage of postsynaptic neurons to fire
-                    ex.calibrate_amplitude(std_cal=protocol_parameters['std'])
-                except SystemError:
-                    the_table.delete(id=query_id)
-                    db.commit()
-                    if not debug:
-                        sys.stdout = sys.__stdout__
-                    print('#########################################################################################\n'
-                          '                   Initial extracellular stimulation too small\n'
-                          '#########################################################################################\n')
-                    print(new_indexes)
-                    print(new_parameters)
-                    return 1
+                    # Save initial weights for later computation of the protocol plasticity and score
+                    initial_weights = ex.plasticity_parameters['init_weight']
 
-                # Run simulation
-                try:
-                    ex.run()
-                except Warning:
-                    nan_bool = True
-                else:
-                    nan_bool = False
+                    # Make sure to catch any error due to extracellular stimulation calibration
+                    try:
+                        # Calibration of the fraction of presynaptic neurons triggered to spike by an extracellular
+                        # stimulation pulse in order to lead to a specific percentage of postsynaptic neurons to fire
+                        ex.calibrate_amplitude(std_cal=protocol_parameters['std'])
+                    except SystemError:
+                        the_table.delete(id=query_id)
+                        db.commit()
+                        if not debug:
+                            sys.stdout = sys.__stdout__
+                        print('#####################################################################################\n'
+                              '                   Initial extracellular stimulation too small\n'
+                              '#####################################################################################\n')
+                        print(new_indexes)
+                        print(new_parameters)
+                        return 1
+
+                    # Run simulation
+                    try:
+                        ex.run()
+                    except Warning:
+                        nan_bool = True
+
+                    if len(brian_warnings) > 0:
+                        nan_bool = True
 
                 # Reenable printing of outputs
                 if not debug:
@@ -272,7 +277,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                         broken = False
                         protoscore = end_weights[protocol] - initial_weights
                 elif protocol in ['sLFS', 'wLFS']:
-                    if end_weights[protocol] < initial_weights:
+                    if end_weights[protocol] > initial_weights:
                         broken = True
                         break
                     else:
@@ -280,17 +285,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                         protoscore = initial_weights - end_weights[protocol]
                 else:
                     raise ValueError(protocol)
-
-                if protoscore > 1:
-                    the_table.delete(id=query_id)
-                    db.commit()
-                    print('Weights exploded with mean weights = {}'.format(end_weights[protocol]))
-                    print('The protocol is ' + protocol)
-                    print('\nParameters:')
-                    print(new_parameters)
-                    print('\nIndexes:')
-                    print(new_indexes)
-                    return 2
 
                 # Only keep the worst score of all protocols
                 if protoscore < new_score:
@@ -325,7 +319,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         else:
             try:
                 accept_prob = new_score / current_score
-            except ZeroDivisionError:
+            except ZeroDivisionError or RuntimeWarning:
                 accept_prob = 1
 
             if rnd.uniform(0, 1) < accept_prob:
@@ -334,6 +328,10 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 current_score = new_score
 
         print('    Score = {}'.format(current_score))
+        if current_score == 666:
+            print('#################################################################################################\n'
+                  '                               666 score escaped\n'
+                  '#################################################################################################\n')
 
     return 0
 
