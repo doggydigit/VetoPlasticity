@@ -207,7 +207,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                         debug=debug)
 
                 # Monitor Brian warnings especially due to NaN numerical integration errors
-                with catch_logs as brian_warnings:
+                with catch_logs() as brian_warnings:
 
                     # Make sure to catch any error due to initial weights calibration
                     try:
