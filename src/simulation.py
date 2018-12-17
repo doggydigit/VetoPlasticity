@@ -111,8 +111,6 @@ class PlasticityProtocol:
         :param integration_method: method to use to integrate differential equations with brian
         :param debug: Set to true for verbose output and shorter simulation
         """
-        print('line 114')
-        sys.stdout.flush()
 
         if debug:
             print('\n\n\nInitialization:')
@@ -122,31 +120,19 @@ class PlasticityProtocol:
             self.process = psutil.Process(os.getpid())
             print(self.process.memory_info().rss)
 
-        print('line 125')
-        sys.stdout.flush()
-
         if veto and homeo:
             raise NotImplementedError('homeo and veto cannot be set to True at the same time')
-
-        print('line 131')
-        sys.stdout.flush()
 
         if same_connectivity_matrix:
             seed(1)
             rnd.seed(321)
             np.random.seed(1002)
 
-        print('line 139')
-        sys.stdout.flush()
-
         if 'dt' in post_neuron_parameters:
             defaultclock.dt = post_neuron_parameters['dt']
             self.timestep = post_neuron_parameters['dt']
         else:
             self.timestep = defaultclock.dt
-
-        print('line 148')
-        sys.stdout.flush()
 
         self.protocol = protocol_parameters['protocol_type']
         self.plasticity_rule = plasticity_parameters['PlasticityRule']
@@ -162,28 +148,14 @@ class PlasticityProtocol:
         self.method = integration_method
         self.debug = debug
 
-        print('line 165')
-        sys.stdout.flush()
-
         # The input to the spike generator group was misunderstood -> rethink whole protocol pipeline
         self.t_pre, self.pre_neuron_parameters['ids'], final_t_pre = self.make_t('pre')
         self.final_t = self.time_around + final_t_pre * second
 
-        print('line 172')
-        sys.stdout.flush()
-
         self.neuron_pre = SpikeGeneratorGroup(pre_neuron_parameters['nr'],
                                               pre_neuron_parameters['ids'],
                                               self.t_pre * second)
-
-        print('line 179')
-        sys.stdout.flush()
-
         self.neuron_post = self.make_neuron()
-
-        print('line 184')
-        sys.stdout.flush()
-
         self.syn = self.make_synapse()
 
         print('Initialized Simulation with:')
@@ -429,6 +401,9 @@ class PlasticityProtocol:
         :return:
         """
 
+        print('line 404')
+        sys.stdout.flush()
+
         # (MT) Get the plasiticity equations depending on the chosen plasticity rule
         if self.plasticity_parameters['PlasticityRule'] == 'Triplet':
             params, pre_eqs, syn_eqs, post_eqs = get_triplet(self.plasticity_parameters)
@@ -445,14 +420,23 @@ class PlasticityProtocol:
         else:
             raise ValueError
 
+        print('line 423')
+        sys.stdout.flush()
+
         # (MT) Construct the synapses according to the equations
         syn = Synapses(source=self.neuron_pre, target=self.neuron_post, model=syn_eqs, on_pre=pre_eqs, on_post=post_eqs,
                        multisynaptic_index='synapse_number', namespace=params, method=self.method)
+
+        print('line 430')
+        sys.stdout.flush()
 
         # (GD) this connects all neuron pairs with given prob
         syn.connect(p=self.pre_neuron_parameters['connect_prob'])
         if self.veto:
             syn.theta = self.plasticity_parameters['Theta_low']
+
+        print('line 438')
+        sys.stdout.flush()
 
         if self.debug:
             print('synapse made according to ', self.plasticity_parameters['PlasticityRule'])
