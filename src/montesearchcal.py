@@ -170,14 +170,14 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                                                  ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'],
                                                  t1=new_indexes['tau_lowpass1'], t2=new_indexes['tau_lowpass2'],
                                                  tx=new_indexes['tau_x'], bt=new_indexes['b_theta'],
-                                                 tt=new_indexes['tau_theta'], score=0))
+                                                 tt=new_indexes['tau_theta'], score=-1))
 
             else:
                 query_id = the_table.insert(dict(th=new_indexes['Theta_high'], tl=new_indexes['Theta_low'],
                                                  ap=new_indexes['A_LTP'], ad=new_indexes['A_LTD'],
                                                  t1=new_indexes['tau_lowpass1'], t2=new_indexes['tau_lowpass2'],
-                                                 tx=new_indexes['tau_x'], score=0))
-            # db.commit()
+                                                 tx=new_indexes['tau_x'], score=-1))
+            db.commit()
 
             # ##########################################################################################################
             #            Run Simulations of all 4 protocols with new parameters and save weight changes
@@ -186,6 +186,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             # Object containing the weight changes that occured in each protocol
             end_weights = {}
             broken = True  # Actually unnecessary, but editor likes it
+            new_score = 666
             nan_bool = False
 
             # Iterate through all 4 protocols
@@ -212,7 +213,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                         ex.calibrate_w_init(std_cal=protocol_parameters['std'])
                     except SystemError:
                         the_table.delete(id=query_id)
-                        # db.commit()
+                        db.commit()
                         print('#####################################################################################\n'
                               '                         Weights initialized too small\n'
                               '#####################################################################################\n')
@@ -230,7 +231,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                         ex.calibrate_amplitude(std_cal=protocol_parameters['std'])
                     except SystemError:
                         the_table.delete(id=query_id)
-                        # db.commit()
+                        db.commit()
                         print('#####################################################################################\n'
                               '                   Initial extracellular stimulation too small\n'
                               '#####################################################################################\n')
@@ -279,7 +280,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                     new_score = protoscore
                 elif protoscore > 1:
                     the_table.delete(id=query_id)
-                    # db.commit()
+                    db.commit()
                     print('Weird protoscore = {}'.format(protoscore))
                     print('The protocol is ' + protocol)
                     print('\nParameters:')
@@ -292,7 +293,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 new_score = 0
 
             the_table.update(dict(id=query_id, score=new_score), ['id'])
-            # db.commit()
+            db.commit()
 
         else:
             # Get score that was already computed
