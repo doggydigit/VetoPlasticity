@@ -14,35 +14,40 @@ from simulation import *
 import os
 import dataset
 import warnings
+
 warnings.filterwarnings("error")
 
 
-def set_param(pname, index):
+def set_param(pname, index, granu=0):
     """
     This function will either transform the given index to the corresponding parameter value or sample an index in the
     right parameter range to produce a randomly sampled value for the desired parameter.
     :param pname: Name of the parameter to set
     :param index: Index of the parameter value
+    :param granu: Granularity of the parameter search, which determines what parameter search subspace
     :return: return the value for desired parameter to set
     """
 
-    if pname in ['Theta_high', 'Theta_low']:
-        return (-15 - 7 * index) * mV
-    elif pname in ['A_LTP', 'A_LTD']:
-        return 0.001 * 10 ** index
-    elif pname in ['tau_lowpass1', 'tau_lowpass2']:
-        return 2 ** index * ms
-    elif pname is 'tau_x':
-        return 2 ** (index - 2) * ms
-    elif pname is 'b_theta':
-        return 0.4 * 5 ** index * ms
-    elif pname is 'tau_theta':
-        return 0.2 * 5 ** index * ms
+    if granu == 0:
+        if pname in ['Theta_high', 'Theta_low']:
+            return (-15 - 7 * index) * mV
+        elif pname in ['A_LTP', 'A_LTD']:
+            return 0.001 * 10 ** index
+        elif pname in ['tau_lowpass1', 'tau_lowpass2']:
+            return 2 ** index * ms
+        elif pname is 'tau_x':
+            return 2 ** (index - 2) * ms
+        elif pname is 'b_theta':
+            return 0.4 * 5 ** index * ms
+        elif pname is 'tau_theta':
+            return 0.2 * 5 ** index * ms
+        else:
+            raise ValueError(pname)
     else:
-        raise ValueError(pname)
+        raise NotImplementedError
 
 
-def main(plasticity, neuron, veto, homeo=False, debug=False):
+def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
     """
     Simulate a stimulation protocol with the desired neuron model and plasticity rule to monitor the resulting synaptic
     weight dynamics. This can also plot or save some results of the simulation.
@@ -51,6 +56,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
     :param veto: bool whether or not to use a veto mechanism between LTP and LTD
     :param homeo: bool whether or not to use a homeostasis term in the plasticity
     :param debug: bool whether or not to have a more verbose output and simplified simulation
+    :param granularity: int describing how fine the param search will be (Note: the range is also decreased for that)
     """
 
     # Stimulation protocol parameters
@@ -82,12 +88,18 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         if veto:
             param_names = ['Theta_high', 'Theta_low', 'A_LTP', 'A_LTD', 'tau_lowpass1', 'tau_lowpass2', 'tau_x',
                            'b_theta', 'tau_theta']
-            grid_params = {'Theta_high': 8, 'Theta_low': 8, 'A_LTP': 8, 'A_LTD': 8, 'tau_lowpass1': 7,
-                           'tau_lowpass2': 7, 'tau_x': 7, 'b_theta': 5, 'tau_theta': 5}
+            if granularity == 0:
+                grid_params = {'Theta_high': 8, 'Theta_low': 8, 'A_LTP': 8, 'A_LTD': 8, 'tau_lowpass1': 7,
+                               'tau_lowpass2': 7, 'tau_x': 7, 'b_theta': 5, 'tau_theta': 5}
+            else:
+                raise NotImplementedError
         else:
             param_names = ['Theta_high', 'Theta_low', 'A_LTP', 'A_LTD', 'tau_lowpass1', 'tau_lowpass2', 'tau_x']
-            grid_params = {'Theta_high': 11, 'Theta_low': 11, 'A_LTP': 7, 'A_LTD': 7, 'tau_lowpass1': 7,
-                           'tau_lowpass2': 7, 'tau_x': 7}
+            if granularity == 0:
+                grid_params = {'Theta_high': 11, 'Theta_low': 11, 'A_LTP': 7, 'A_LTD': 7, 'tau_lowpass1': 7,
+                               'tau_lowpass2': 7, 'tau_x': 7}
+            else:
+                raise NotImplementedError
 
         if post_neuron_parameters['model'] == 'exIF':
             parameters = Claire_exIF_parameters
@@ -119,7 +131,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
         print('Iteration: {}'.format(i))
         sys.stdout.flush()
-        
+
         # ##############################################################################################################
         #                                              Modify one parameter
         # ##############################################################################################################
@@ -260,16 +272,17 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 if not debug:
                     sys.stdout = sys.__stdout__
 
-                # If plasticity parameters lead to extreme dynamics producing NaNs, exit and assign score of zero
-                if nan_bool:
-                    print('Nan solution\n')
-                    broken = True
-                    break
-
                 # If TET protocol produced LTD or LFS protocol produced LTP, exit and assign score of zero
                 # Else compute score for protocol
                 protocol = protocol_parameters['protocol_type']
                 end_weights[protocol] = np.mean(np.array(ex.syn.w_ampa))
+
+                # If plasticity parameters lead to extreme dynamics producing NaNs, exit and assign score of zero
+                if nan_bool or end_weights[protocol] != end_weights[protocol]:
+                    print('Nan solution\n')
+                    broken = True
+                    break
+
                 if protocol in ['sTET', 'wTET']:
                     if end_weights[protocol] < initial_weights:
                         broken = True
@@ -289,7 +302,12 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
                 # Only keep the worst score of all protocols
                 if protoscore < new_score:
-                    new_score = protoscore
+                    if np.isnan(protoscore):
+                        print('Escaped NaN caught')
+                        broken = True
+                        break
+                    else:
+                        new_score = protoscore
                 elif protoscore > 1:
                     the_table.delete(id=query_id)
                     db.commit()
@@ -304,8 +322,17 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
             if broken:
                 new_score = 0
 
-            the_table.update(dict(id=query_id, score=new_score), ['id'])
-            db.commit()
+            if new_score == 666:
+                print('#############################################################################################\n'
+                      '                               666 score escaped\n'
+                      '#############################################################################################\n')
+                the_table.update(dict(id=query_id, score=0), ['id'])
+                db.commit()
+                new_score = 0
+                return 4
+            else:
+                the_table.update(dict(id=query_id, score=new_score), ['id'])
+                db.commit()
 
         else:
             # Get score that was already computed
@@ -329,10 +356,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
                 current_score = new_score
 
         print('    Score = {}'.format(current_score))
-        if current_score == 666:
-            print('#################################################################################################\n'
-                  '                               666 score escaped\n'
-                  '#################################################################################################\n')
 
     return 0
 

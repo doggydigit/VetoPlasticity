@@ -277,7 +277,12 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
 
                 # Only keep the worst score of all protocols
                 if protoscore < new_score:
-                    new_score = protoscore
+                    if np.isnan(protoscore):
+                        print('Escaped NaN caught')
+                        broken = True
+                        break
+                    else:
+                        new_score = protoscore
                 elif protoscore > 1:
                     the_table.delete(id=query_id)
                     db.commit()
