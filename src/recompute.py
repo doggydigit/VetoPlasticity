@@ -307,7 +307,7 @@ if __name__ == "__main__":
     vetoing = True  # whether or not to use a veto mechanism between LTP and LTD
 
     # Run
-    exi = main(rule_name, indices, neuron=neuron_types, veto=vetoing, debug=False)
+    exi = main(rule_name, indexes, neuron=neuron_types, veto=vetoing, debug=False)
 
     if exi is 0:
         print('\nMonte-Carlo search finished successfully!')
