@@ -7,6 +7,9 @@ src/*.pyc
 # All pickle files
 data/*.pickle
 
+# Play database
+data/montetestresults.db
+
 # All old data files
 data/Spike*.txt
 fig/*
@@ -15,3 +18,5 @@ fig/*
 src/.idea/*
 src/*ipynb*
 src/__pycache__/*
+
+

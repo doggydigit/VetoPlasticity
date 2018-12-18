@@ -47,7 +47,7 @@ def set_param(pname, index, granu=0):
         raise NotImplementedError
 
 
-def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
+def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, first_id=None):
     """
     Simulate a stimulation protocol with the desired neuron model and plasticity rule to monitor the resulting synaptic
     weight dynamics. This can also plot or save some results of the simulation.
@@ -57,7 +57,19 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
     :param homeo: bool whether or not to use a homeostasis term in the plasticity
     :param debug: bool whether or not to have a more verbose output and simplified simulation
     :param granularity: int describing how fine the param search will be (Note: the range is also decreased for that)
+    :param first_id: ID of the parameter configuration to start with. If None, a random configuration is used.
     """
+
+    # Connect to database (Sqlite database corresponding to the plasticity model used)
+    if granularity == 0:
+        db_name = '../data/monteresults.db'
+    elif granularity == 1:
+        db_name = '../data/monteresults_g1.db'
+    else:
+        raise NotImplementedError
+    db = dataset.connect('sqlite:///' + db_name)
+    table_name = plasticity + '_veto' if veto else plasticity + '_noveto'
+    the_table = db.create_table(table_name)
 
     # Stimulation protocol parameters
     protocols = [wLFS_protocol_parameters, wTET_protocol_parameters,
@@ -91,6 +103,9 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
             if granularity == 0:
                 grid_params = {'Theta_high': 8, 'Theta_low': 8, 'A_LTP': 8, 'A_LTD': 8, 'tau_lowpass1': 7,
                                'tau_lowpass2': 7, 'tau_x': 7, 'b_theta': 5, 'tau_theta': 5}
+            elif granularity == 1:
+                grid_params = {'Theta_high': 8, 'Theta_low': 8, 'A_LTP': 8, 'A_LTD': 8, 'tau_lowpass1': 7,
+                               'tau_lowpass2': 7, 'tau_x': 7, 'b_theta': 5, 'tau_theta': 5}
             else:
                 raise NotImplementedError
         else:
@@ -109,19 +124,25 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
         raise NotImplementedError('give param names')
         # parameters = Hippo_plasticity_parameters
 
-    # Randomly initialize parameters
+    # Initialize parameter indices
     indexes = {}
+    if first_id is None:
+        for param_name in param_names:
+            indexes[param_name] = rnd.sample(xrange(grid_params[param_name]), 1)[0] + 1
+    else:
+        translator = {'Theta_high': 'th', 'Theta_low': 'tl', 'A_LTP': 'ap', 'A_LTD': 'ad', 'tau_lowpass1': 't1',
+                      'tau_lowpass2': 't2', 'tau_x': 'tx', 'b_theta': 'bt', 'tau_theta': 'tt'}
+        first_indices = the_table.find_one(id=first_id)
+        for param_name in param_names:
+            indexes[param_name] = first_indices[translator[param_name]]
+
+        print('First indices are:\n{}'.format(first_indices))
+
+    # Initialize parameter values from indices according to desired grid design and specfici granularity
     for param_name in param_names:
-        indexes[param_name] = rnd.sample(xrange(grid_params[param_name]), 1)[0] + 1
-        parameters[param_name] = set_param(param_name, indexes[param_name])
+        parameters[param_name] = set_param(param_name, indexes[param_name], granularity)
 
     print('Parameters initialized')
-
-    # Connect to database (Sqlite database corresponding to the plasticity model used)
-    db_name = '../data/monteresults.db'
-    db = dataset.connect('sqlite:///' + db_name)
-    table_name = plasticity + '_veto' if veto else plasticity + '_noveto'
-    the_table = db.create_table(table_name)
 
     # Monte-Carlo iterations
     current_score = 0
@@ -328,7 +349,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
                       '#############################################################################################\n')
                 the_table.update(dict(id=query_id, score=0), ['id'])
                 db.commit()
-                new_score = 0
                 return 4
             else:
                 the_table.update(dict(id=query_id, score=new_score), ['id'])
@@ -361,13 +381,21 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0):
 
 
 if __name__ == "__main__":
+
+    g = int(sys.argv[1])  # Resolution of the grid search
+
+    if len(sys.argv) == 3:
+        fid = int(sys.argv[2])
+    else:
+        fid = None
+
     # Simulation choices
     rule_name = 'Claire'  # can be either of 'Claire', 'Clopath' or 'Triplet'
     neuron_types = 'Adex'  # can be either of default, LIF, exIF, Ziegler
     vetoing = True  # whether or not to use a veto mechanism between LTP and LTD
 
     # Run
-    exi = main(rule_name, neuron=neuron_types, veto=vetoing, debug=False)
+    exi = main(rule_name, neuron=neuron_types, veto=vetoing, debug=False, granu=g, first_id=fid)
 
     if exi is 0:
         print('\nMonte-Carlo search finished successfully!')
