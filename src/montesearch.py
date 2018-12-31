@@ -5,7 +5,7 @@
     Author: Matthias Tsai
     Email: matthias.chinyen.tsai@gmail.com
     Date created: 06/12/2018
-    Date last modified: 14/12/2018
+    Date last modified: 20/12/2018
     Python Version: 2.7
 """
 
@@ -91,11 +91,20 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, firs
 
     # Plasticity parameters
     if plasticity is 'Clopath':
-        raise NotImplementedError('give param names')
-        # if post_neuron_parameters['model'] == 'exIF':
-        #     parameters = Clopath_exIF_parameters
-        # else:
-        #     parameters = Clopath_LIF_parameters
+        if veto:
+            raise NotImplementedError('give param names')
+        else:
+            param_names = ['Theta_high', 'Theta_low', 'A_LTP', 'A_LTD', 'tau_lowpass1', 'tau_lowpass2', 'tau_x']
+
+            if granularity == 0:
+                grid_params = {'Theta_high': 8, 'Theta_low': 8, 'A_LTP': 8, 'A_LTD': 8, 'tau_lowpass1': 7,
+                               'tau_lowpass2': 7, 'tau_x': 7}
+
+        if post_neuron_parameters['model'] == 'exIF':
+            parameters = Clopath_exIF_parameters
+        else:
+            parameters = Clopath_LIF_parameters
+
     elif plasticity is 'Claire':
         if veto:
             param_names = ['Theta_high', 'Theta_low', 'A_LTP', 'A_LTD', 'tau_lowpass1', 'tau_lowpass2', 'tau_x',
@@ -106,8 +115,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, firs
             elif granularity == 1:
                 grid_params = {'Theta_high': 8, 'Theta_low': 8, 'A_LTP': 8, 'A_LTD': 8, 'tau_lowpass1': 7,
                                'tau_lowpass2': 7, 'tau_x': 7, 'b_theta': 5, 'tau_theta': 5}
-            else:
-                raise NotImplementedError
         else:
             param_names = ['Theta_high', 'Theta_low', 'A_LTP', 'A_LTD', 'tau_lowpass1', 'tau_lowpass2', 'tau_x']
             if granularity == 0:
@@ -120,9 +127,6 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, firs
             parameters = Claire_exIF_parameters
         else:
             parameters = Claire_LIF_parameters
-    else:
-        raise NotImplementedError('give param names')
-        # parameters = Hippo_plasticity_parameters
 
     # Initialize parameter indices
     indexes = {}
@@ -382,17 +386,22 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, firs
 
 if __name__ == "__main__":
 
-    g = int(sys.argv[1])  # Resolution of the grid search
+    # Resolution of the grid search
+    if len(sys.argv) > 1:
+        g = int(sys.argv[1])
+    else:
+        g = 0
 
+    # id of parameter configuration to use at initialization
     if len(sys.argv) == 3:
         fid = int(sys.argv[2])
     else:
         fid = None
-
+    print(sys.argv)
     # Simulation choices
-    rule_name = 'Claire'  # can be either of 'Claire', 'Clopath' or 'Triplet'
+    rule_name = 'Clopath'  # can be either of 'Claire', 'Clopath' or 'Triplet'
     neuron_types = 'Adex'  # can be either of default, LIF, exIF, Ziegler
-    vetoing = True  # whether or not to use a veto mechanism between LTP and LTD
+    vetoing = False  # whether or not to use a veto mechanism between LTP and LTD
 
     # Run
     exi = main(rule_name, neuron=neuron_types, veto=vetoing, debug=False, granularity=g, first_id=fid)

@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+    File name: testparameters.py
+    Author: Matthias Tsai
+    Email: matthias.chinyen.tsai@gmail.com
+    Date created: 17/12/2018
+    Date last modified: 20/12/2018
+    Python Version: 2.7
+"""
 
 from simulation import *
 

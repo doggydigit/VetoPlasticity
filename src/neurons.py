@@ -4,7 +4,7 @@
     File name: neurons.py
     Author: Halla Sigurthorsdottir, Christoph Blattgerste, Giorgia Dellaferrera, Matthias Tsai
     Date created: 27/11/2018
-    Date last modified: ...
+    Date last modified: 20/12/2018
     Python Version: 2.7
 """
 

@@ -5,7 +5,7 @@
     Author: Matthias Tsai
     Email: matthias.chinyen.tsai@gmail.com
     Date created: 27/11/2018
-    Date last modified: ...
+    Date last modified: 20/12/2018
     Python Version: 2.7
 """
 
@@ -156,4 +156,4 @@ if __name__ == "__main__":
     save = True  # whether or not to save the weight dynamics
 
     # Run
-    main(rule_name, protocol, neuron=neuron_types, plotting=plot, saving=save, veto=False, homeo=False, debug=False)
+    main(rule_name, protocol, neuron=neuron_types, plotting=plot, saving=save, veto=False, homeo=False, debug=True)

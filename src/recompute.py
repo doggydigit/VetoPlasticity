@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
 """
-    File name: montesearch.py
+    File name: recompute.py
     Author: Matthias Tsai
     Email: matthias.chinyen.tsai@gmail.com
-    Date created: 06/12/2018
-    Date last modified: 14/12/2018
+    Date created: 18/12/2018
+    Date last modified: 20/12/2018
     Python Version: 2.7
 """
 
