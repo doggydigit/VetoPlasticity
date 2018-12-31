@@ -5,7 +5,7 @@
     Author: Halla Sigurthorsdottir, Christoph Blattgerste, Giorgia Dellaferrera, Matthias Tsai
     Email: matthias.chinyen.tsai@gmail.com
     Date created: 06/10/2016
-    Date last modified: ...
+    Date last modified: 20/12/2018
     Python Version: 2.7
 """
 
@@ -79,8 +79,8 @@ testing_protocol_parameters = {'stimulation_type': 'extracellular',
                                'stimulation_amplitude': 1,
                                'protocol_type': 'testing_protocol',
                                'hro': 100. * Hz,  # stimulation frequency within blocks
-                               'nr_pulses': 1,
-                               'window': 0.01 * second,
+                               'nr_pulses': 10,
+                               'window': 0.1 * second,
                                'nr_blocks': 1,
                                'std': 1. * ms,  # standard deviation of the presynaptic jitter
                                # Set the clock in case spikes appear more often than one every 5ms.
@@ -194,7 +194,7 @@ class PlasticityProtocol:
         if syn_parameters:
             # (GD) StateMonitor and SpikeMonitor are Brian2 functions that record events and spikes respectively from
             # a NeuronGroup or another event source
-            syn_monitor = StateMonitor(syn, syn_parameters, record=True, dt=0.1*ms)
+            syn_monitor = StateMonitor(syn, syn_parameters, record=True, dt=1*ms)
             parameters_out['syn_monitor'] = syn_monitor
 
         if pre_spikes:
@@ -206,11 +206,11 @@ class PlasticityProtocol:
             parameters_out['post_spikes'] = post_spikes
 
         if (not self.pre_neuron_parameters['model'] == 'spikegen') and pre_parameters:
-            pre_monitor = StateMonitor(neuron_pre, pre_parameters, record=True)
+            pre_monitor = StateMonitor(neuron_pre, pre_parameters, record=True, dt=0.01*ms)
             parameters_out['pre_monitor'] = pre_monitor
 
         if (not self.post_neuron_parameters['model'] == 'spikegen') and post_parameters:
-            post_monitor = StateMonitor(neuron_post, post_parameters, record=True)
+            post_monitor = StateMonitor(neuron_post, post_parameters, record=True, dt=0.01*ms)
             parameters_out['post_monitor'] = post_monitor
 
         # Run
@@ -424,7 +424,7 @@ class PlasticityProtocol:
         # (GD) this connects all neuron pairs with given prob
         syn.connect(p=self.pre_neuron_parameters['connect_prob'])
         if self.veto:
-            syn.theta = self.plasticity_parameters['Theta_low']
+            syn.theta = 0
 
         if self.debug:
             print('synapse made according to ', self.plasticity_parameters['PlasticityRule'])

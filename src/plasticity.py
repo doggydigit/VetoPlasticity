@@ -5,7 +5,7 @@
     Author: Halla Sigurthorsdottir, Christoph Blattgerste, Giorgia Dellaferrera, Matthias Tsai
     Email: matthias.chinyen.tsai@gmail.com
     Date created: 27/11/2018
-    Date last modified: ...
+    Date last modified: 20/12/2018
     Python Version: 2.7
 """
 
@@ -79,7 +79,7 @@ Clopath_exIF_parameters = {'PlasticityRule': 'Clopath',
                            'w_max': 1.,  # (MT) Maximal hard bounded value of the synaptic weights
                            'init_weight': 0.35,  # 0.0043,  # (MT) Initial synaptic weight values; before this fraction
                            # is set by the function calibrate_w_init(). For 2 mV set to 0.0043
-                           'init_stimulation_fraction': 0.255  # (MT) Initial fraction of presynaptic neurons triggered
+                           'init_stimulation_fraction': 1.  # (MT) Initial fraction of presynaptic neurons triggered
                            # to spike by a stimulation pulse; before this fraction is set by calibrate_amplitude().
                            }
 
@@ -108,8 +108,8 @@ Claire_exIF_parameters = {'PlasticityRule': 'Claire',
                           'x_reset': 1.,  # spike trace reset value'
                           'A_LTD': 1000,  # depression amplitude
                           'A_LTP': 1795,  # potentiation amplitude
-                          #'A_LTD': 0.1,  # depression amplitude
-                          #'A_LTP': 0.01795,  # potentiation amplitude
+                          # 'A_LTD': 0.1,  # depression amplitude
+                          # 'A_LTP': 0.01795,  # potentiation amplitude
                           'tau_lowpass1': 52.63 * ms,  # = tau_minus
                           'tau_lowpass2': 3.04 * ms,  # = tau_plus
                           'tau_theta': 114.9 * ms,
@@ -171,14 +171,13 @@ def get_clopath(plasticity_parameters):
               'Theta_high': plasticity_parameters['Theta_high'],
               'tau_x': plasticity_parameters['tau_m'],
               'w_max': plasticity_parameters['w_max'],
-              'x_reset': plasticity_parameters['x_reset'],
-              'step': defaultclock.dt}
+              'x_reset': plasticity_parameters['x_reset']}
 
     # equations executed at every time step
-    syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''  # (MT)THIS IS INEFFICIENT BECAUSE IT COMPUTES PREXTRACE FOR EACH SYNAPSE AND NOT EACH PRESYNAPTIC NEURONX
+    syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''  # (MT) THIS IS INEFFICIENT BECAUSE IT COMPUTES PREXTRACE FOR EACH SYNAPSE AND NOT EACH PRESYNAPTIC NEURONX
     syn_eqs += '''dw_ampa/dt = A_LTP * pre_x_trace * (v/mV - Theta_high/mV) * (v_lowpass2_post/mV - Theta_low/mV)'''
     syn_eqs += ''' * int(v/mV - Theta_high/mV > 0) * int(v_lowpass2_post/mV - Theta_low/mV > 0) /ms'''
-    syn_eqs += ''' * int(w_max - w_ampa > 0) + int(w_max - w_ampa < 0) * (w_max - w_ampa) / step: 1 (clock-driven)\n'''
+    syn_eqs += ''' * int(w_max > w_ampa) : 1 (clock-driven)\n'''  # (MT) + int(w_max < w_ampa) * (w_max - w_ampa) / step
 
     # equations executed only when a pre-synaptic spike occurs
     pre_eqs = '''g_ampa += w_ampa * ampa_max_cond  # increment synaptic conductance\n'''
@@ -186,10 +185,7 @@ def get_clopath(plasticity_parameters):
     pre_eqs += '''int(v_lowpass1_post/mV - Theta_low/mV > 0), 0, w_max)\n'''
     pre_eqs += '''pre_x_trace += x_reset / tau_x  # spike trace\n'''
 
-    # equations executed only when a post-synaptic spike occurs
-    post_eqs = ''''''
-
-    return params, pre_eqs, syn_eqs, post_eqs
+    return params, pre_eqs, syn_eqs, ''''''
 
 
 def get_homeoclopath(plasticity_parameters):
@@ -213,7 +209,6 @@ def get_homeoclopath(plasticity_parameters):
     pre_eqs = '''g_ampa += w_ampa * ampa_max_cond  # increment synaptic conductance\n'''
     pre_eqs += '''w_ampa = clip(w_ampa - A_LTD * (v_homeo**2 / v_target) * (v_lowpass1/mV - Theta_low/mV) * '''
     pre_eqs += '''int(v_lowpass1/mV - Theta_low/mV > 0), 0, w_max)\n'''
-    pre_eqs += '''w_ampa = clip(w_ampa - w_minus, 0, w_max)\n'''
     pre_eqs += '''pre_x_trace += x_reset / (tau_x/ms)  # spike trace\n'''
 
     # equations executed only when a post-synaptic spike occurs
