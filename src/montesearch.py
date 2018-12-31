@@ -61,18 +61,10 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, firs
     """
 
     # Connect to database (Sqlite database corresponding to the plasticity model used)
-    if plasticity is 'Clopath':
-        if granularity == 0:
-            db_name = '../data/monteresults_Clopath_g0.db'
-        else:
-            raise NotImplementedError
-    elif plasticity is 'Claire':
-        if granularity == 0:
-            db_name = '../data/monteresults.db'
-        elif granularity == 1:
-            db_name = '../data/monteresults_g1.db'
-        else:
-            raise NotImplementedError
+    if granularity == 0:
+        db_name = '../data/monteresults.db'
+    elif granularity == 1:
+        db_name = '../data/monteresults_g1.db'
     else:
         raise NotImplementedError
     db = dataset.connect('sqlite:///' + db_name)
