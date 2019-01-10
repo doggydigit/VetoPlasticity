@@ -90,7 +90,7 @@ def main(plasticity, neuron, veto, homeo=False, debug=False, granularity=0, firs
                               'Ziegler': ziegler_post_parameters}[neuron]
 
     # Plasticity parameters
-    if plasticity is 'Clopath':
+    if plasticity in ['Clopath', 'Lowpath']:
         if veto:
             raise NotImplementedError('give param names')
         else:
@@ -397,9 +397,9 @@ if __name__ == "__main__":
         fid = int(sys.argv[2])
     else:
         fid = None
-    print(sys.argv)
+
     # Simulation choices
-    rule_name = 'Clopath'  # can be either of 'Claire', 'Clopath' or 'Triplet'
+    rule_name = 'Lowpath'  # can be either of 'Claire', 'Lowpath', 'Clopath' or 'Triplet'
     neuron_types = 'Adex'  # can be either of default, LIF, exIF, Ziegler
     vetoing = False  # whether or not to use a veto mechanism between LTP and LTD
 
