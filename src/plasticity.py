@@ -57,7 +57,7 @@ Clopath_LIF_parameters = {'PlasticityRule': 'Clopath',
                           'A_LTP': 1.5e-2,  # potentiation amplitude
                           'tau_lowpass1': 40 * ms,  # timeconstant for low-pass filtered voltage
                           'tau_lowpass2': 30 * ms,  # timeconstant for low-pass filtered voltage
-                          'tau_m': 5. * ms,
+                          'tau_x': 5. * ms,
                           'tau_homeo': 1000 * ms,  # homeostatic timeconstant
                           'ampa_max_cond': 5.e-8 * siemens,  # Ampa maximal conductance
                           'w_max': 1.,
@@ -71,7 +71,7 @@ Clopath_exIF_parameters = {'PlasticityRule': 'Clopath',
                            'x_reset': 1. * ms,  # spike trace reset value'
                            'A_LTD': 2.7e-4,  # depression amplitude
                            'A_LTP': 1.2e-4,  # potentiation amplitude
-                           'tau_m': 5. * ms,
+                           'tau_x': 5. * ms,
                            'tau_lowpass1': 10.5 * ms,  # = tau_minus
                            'tau_lowpass2': 200 * ms,  # = tau_plus
                            'tau_homeo': 1000 * ms,  # homeostatic time constant
@@ -169,7 +169,7 @@ def get_clopath(plasticity_parameters):
               'A_LTD': plasticity_parameters['A_LTD'],
               'Theta_low': plasticity_parameters['Theta_low'],
               'Theta_high': plasticity_parameters['Theta_high'],
-              'tau_x': plasticity_parameters['tau_m'],
+              'tau_x': plasticity_parameters['tau_x'],
               'w_max': plasticity_parameters['w_max'],
               'x_reset': plasticity_parameters['x_reset']}
 
@@ -195,7 +195,7 @@ def get_homeoclopath(plasticity_parameters):
               'Theta_low': plasticity_parameters['Theta_low'],
               'Theta_high': plasticity_parameters['Theta_high'],
               'tau_homeo': plasticity_parameters['tau_homeo'],
-              'tau_x': plasticity_parameters['tau_m'],
+              'tau_x': plasticity_parameters['tau_x'],
               'w_max': plasticity_parameters['w_max'],
               'v_target': plasticity_parameters['v_target'],
               'x_reset': plasticity_parameters['x_reset']}
@@ -217,6 +217,32 @@ def get_homeoclopath(plasticity_parameters):
     return params, pre_eqs, syn_eqs, post_eqs
 
 
+def get_lowpath(plasticity_parameters):
+    params = {'ampa_max_cond': plasticity_parameters['ampa_max_cond'],
+              'A_LTP': plasticity_parameters['A_LTP'],
+              'A_LTD': plasticity_parameters['A_LTD'],
+              'Theta_low': plasticity_parameters['Theta_low'],
+              'Theta_high': plasticity_parameters['Theta_high'],
+              'tau_x': plasticity_parameters['tau_x'],
+              'w_max': plasticity_parameters['w_max'],
+              'x_reset': plasticity_parameters['x_reset']}
+
+    # equations executed at every time step
+    syn_eqs = '''dpre_x_trace/dt = -pre_x_trace / tau_x : 1 (clock-driven) # presynaptic spike\n'''  # (MT) THIS IS INEFFICIENT BECAUSE IT COMPUTES PREXTRACE FOR EACH SYNAPSE AND NOT EACH PRESYNAPTIC NEURONX
+    syn_eqs += '''w_LTP = A_LTP * pre_x_trace * (v_lowpass2_post - Theta_low) * int(v_lowpass2_post-Theta_low > 0*mV)'''
+    syn_eqs += ''' * (v - Theta_high) * int(v-Theta_high > 0 * mV) * int(w_max > w_ampa) / (mV * mV) : 1 \n'''
+    syn_eqs += '''w_LTD = A_LTD * pre_x_trace * (v_lowpass1 - Theta_low) / mV'''
+    syn_eqs += ''' * int(v_lowpass1 - Theta_low > 0 * mV) * int(w_ampa > 0) : 1\n'''
+    syn_eqs += '''dw_ampa/dt = (wLTP - wLTD) / ms : 1 (clock-driven)\n'''
+
+    # equations executed only when a pre-synaptic spike occurs
+    pre_eqs = '''g_ampa += w_ampa * ampa_max_cond\n'''
+    pre_eqs += '''w_ampa = clip(w_ampa, 0, w_max)\n'''
+    pre_eqs += '''pre_x_trace += x_reset / (tau_x / ms)\n'''
+
+    return params, pre_eqs, syn_eqs, ''''''
+
+
 def get_claire(plasticity_parameters, veto=True):
     params = {'ampa_max_cond': plasticity_parameters['ampa_max_cond'],
               'A_LTP': plasticity_parameters['A_LTP'],
@@ -232,11 +258,11 @@ def get_claire(plasticity_parameters, veto=True):
 
     # equations executed at every time step
     syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''
-    syn_eqs += '''wLTD = A_LTD * pre_x_trace * (v_lowpass1 - Theta_low)'''
-    syn_eqs += ''' * int(v_lowpass1/mV - Theta_low/mV > 0) * int(w_ampa > 0) : volt\n'''
-    syn_eqs += '''wLTP = A_LTP * pre_x_trace * (v_lowpass2 - Theta_high)'''
-    syn_eqs += ''' * int(v_lowpass2/mV - Theta_high/mV > 0) * int(w_max > w_ampa) : volt\n'''
-    syn_eqs += '''dw_ampa/dt = (wLTP - wLTD)/(mV*ms) : 1 (clock-driven)\n'''
+    syn_eqs += '''wLTD = A_LTD * pre_x_trace * (v_lowpass1 - Theta_low) / mV'''
+    syn_eqs += ''' * int(v_lowpass1 - Theta_low > 0 * mV) * int(w_ampa > 0) : 1\n'''
+    syn_eqs += '''wLTP = A_LTP * pre_x_trace * (v_lowpass2 - Theta_high) / mV'''
+    syn_eqs += ''' * int(v_lowpass2 - Theta_high > 0 * mV) * int(w_max > w_ampa) : 1\n'''
+    syn_eqs += '''dw_ampa/dt = (wLTP - wLTD) / ms : 1 (clock-driven)\n'''
 
     # Add veto equations if required
     if veto:
@@ -247,9 +273,9 @@ def get_claire(plasticity_parameters, veto=True):
         params['Theta_low'] = plasticity_parameters['Theta_low']
 
     # equations executed only when a pre-synaptic spike occurs
-    pre_eqs = '''g_ampa += w_ampa * ampa_max_cond  # increment synaptic conductance\n'''
+    pre_eqs = '''g_ampa += w_ampa * ampa_max_cond\n'''
     pre_eqs += '''w_ampa = clip(w_ampa, 0, w_max)\n'''
-    pre_eqs += '''pre_x_trace += x_reset / (tau_x/ms)  # spike trace\n'''
+    pre_eqs += '''pre_x_trace += x_reset / (tau_x / ms)\n'''
 
     # equations executed only when a post-synaptic spike occurs
     post_eqs = ''''''
