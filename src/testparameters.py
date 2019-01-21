@@ -87,19 +87,41 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         raise NotImplementedError('give param names')
 
     # Randomly initialize parameters
-    indexes = {'A_LTD': 8,
-               'tau_x': 5,
-               'tau_theta': 1,
-               'tau_lowpass1': 4,
-               'tau_lowpass2': 4,
-               'b_theta': 2,
-               'A_LTP': 7,
-               'Theta_low': 7,
-               'Theta_high': 4}
-    for param_name in param_names:
-        parameters[param_name] = set_param(param_name, indexes[param_name])
+    if False:
+        indexes = {'A_LTD': 8,
+                   'tau_x': 5,
+                   'tau_theta': 1,
+                   'tau_lowpass1': 4,
+                   'tau_lowpass2': 4,
+                   'b_theta': 2,
+                   'A_LTP': 7,
+                   'Theta_low': 7,
+                   'Theta_high': 4}
+        for param_name in param_names:
+            parameters[param_name] = set_param(param_name, indexes[param_name])
+    else:
+        parameters = {'A_LTP': 1.0,
+                      'w_max': 1.0,
+                      'tau_theta': 125. * msecond,
+                      'PlasticityRule': 'Claire',
+                      'v_increase_init': 2. * mvolt,
+                      'ampa_max_cond': 50. * nsiemens,
+                      'A_LTD': 0.01,
+                      'Theta_low': -71. * mvolt,
+                      'x_reset': 1.0,
+                      'b_theta': 50. * msecond,
+                      'tau_lowpass2': 8. * msecond,
+                      'Theta_high': -57. * mvolt,
+                      'tau_lowpass1': 4. * msecond,
+                      'tau_x': 2. * msecond,
+                      'init_weight': 0.35,  # initial synaptic weight (good value is 0.348)
+                      'init_stimulation_fraction': 0.892
+                      }
 
     print('Parameters initialized')
+
+    protoscore = {}
+    endstd = {}
 
     # Iterate through all 4 protocols
     for protocol_parameters in protocols:
@@ -132,16 +154,21 @@ def main(plasticity, neuron, veto, homeo=False, debug=False):
         # Else compute score for protocol
         protocol = protocol_parameters['protocol_type']
         endw = np.mean(np.array(ex.syn.w_ampa))
-        endstd = np.std(ex.syn.w_ampa)
+        endstd[protocol] = np.std(ex.syn.w_ampa)
 
         if protocol in ['sTET', 'wTET']:
-            protoscore = endw - initial_weights
+            protoscore[protocol] = endw - initial_weights
         elif protocol in ['sLFS', 'wLFS']:
-            protoscore = initial_weights - endw
+            protoscore[protocol] = initial_weights - endw
         else:
             raise ValueError(protocol)
 
-        print('For protocol "{}", we had a score of {} and std of {}'.format(protocol, protoscore, endstd))
+        print('Protocol "{}" had a score of {} and std of {}'.format(protocol, protoscore[protocol], endstd[protocol]))
+
+    print("\n\n Final results:")
+
+    for protocol in ['sTET', 'wTET', 'sLFS', 'wLFS']:
+        print('Protocol "{}" had a score of {} and std of {}'.format(protocol, protoscore[protocol], endstd[protocol]))
 
 
 if __name__ == "__main__":

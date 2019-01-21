@@ -258,11 +258,11 @@ def get_claire(plasticity_parameters, veto=True):
 
     # equations executed at every time step
     syn_eqs = '''dpre_x_trace/dt = -pre_x_trace/tau_x : 1 (clock-driven) # presynaptic spike\n'''
-    syn_eqs += '''wLTD = A_LTD * pre_x_trace * (v_lowpass1 - Theta_low) / mV'''
-    syn_eqs += ''' * int(v_lowpass1 - Theta_low > 0 * mV) * int(w_ampa > 0) : 1\n'''
-    syn_eqs += '''wLTP = A_LTP * pre_x_trace * (v_lowpass2 - Theta_high) / mV'''
-    syn_eqs += ''' * int(v_lowpass2 - Theta_high > 0 * mV) * int(w_max > w_ampa) : 1\n'''
-    syn_eqs += '''dw_ampa/dt = (wLTP - wLTD) / ms : 1 (clock-driven)\n'''
+    syn_eqs += '''wLTD = A_LTD * pre_x_trace * (v_lowpass1 - Theta_low)'''
+    syn_eqs += ''' * int(v_lowpass1 - Theta_low > 0 * mV) * int(w_ampa > 0) : volt\n'''
+    syn_eqs += '''wLTP = A_LTP * pre_x_trace * (v_lowpass2 - Theta_high)'''
+    syn_eqs += ''' * int(v_lowpass2 - Theta_high > 0 * mV) * int(w_max > w_ampa) : volt\n'''
+    syn_eqs += '''dw_ampa/dt = (wLTP - wLTD) / ms / mV : 1 (clock-driven)\n'''
 
     # Add veto equations if required
     if veto:
